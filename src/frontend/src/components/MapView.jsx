@@ -63,7 +63,10 @@ export default function MapView() {
   }, [fetchLayerGeoJSON, fetchManzanas, fetchPlaces, fetchPlacesHeatmap])
 
   const onViewStateChange = useCallback(
-    ({ viewState: vs }) => setViewState(vs),
+    ({ viewState: vs }) => {
+      setViewState(vs)
+      setPopup(null)
+    },
     [setViewState],
   )
 
@@ -222,19 +225,25 @@ export default function MapView() {
         />
       </DeckGL>
 
-      {popup && (
+      {popup && (() => {
+        const pw = 280, ph = 160, margin = 12
+        const flipX = popup.x + pw + margin > window.innerWidth
+        const flipY = popup.y - ph - margin < 0
+        const left = flipX ? popup.x - pw - margin : popup.x + margin
+        const top = flipY ? popup.y + margin : popup.y - margin
+        return (
         <div
           style={{
             position: 'absolute',
-            left: popup.x + 12,
-            top: popup.y - 12,
+            left,
+            top,
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
             borderRadius: 8,
             padding: '10px 14px',
             fontSize: 12,
             color: 'var(--text-primary)',
-            maxWidth: 280,
+            maxWidth: pw,
             boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
             zIndex: 20,
             pointerEvents: 'auto',
@@ -297,7 +306,8 @@ export default function MapView() {
             </>
           )}
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

@@ -16,6 +16,22 @@ async function safeFetch(url) {
 }
 
 export const useStore = create((set, get) => ({
+  toast: null,
+  showToast: (message, duration = 2500) => {
+    set({ toast: message })
+    setTimeout(() => set({ toast: null }), duration)
+  },
+
+  catalogSummary: null,
+  fetchCatalogSummary: async () => {
+    if (get().catalogSummary) return
+    try {
+      set({ catalogSummary: await safeFetch(`${API}/stats/catalog-summary`) })
+    } catch (e) {
+      console.error('fetchCatalogSummary:', e)
+    }
+  },
+
   theme: savedTheme,
   toggleTheme: () => {
     const next = get().theme === 'light' ? 'dark' : 'light'

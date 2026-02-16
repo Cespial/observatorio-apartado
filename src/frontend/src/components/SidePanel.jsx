@@ -27,6 +27,8 @@ export default function SidePanel() {
   const summary = useStore((s) => s.summary)
   const contentRef = useRef(null)
 
+  const showToast = useStore((s) => s.showToast)
+
   const handleExport = useCallback(async () => {
     if (!contentRef.current) return
     const html2canvas = (await import('html2canvas')).default
@@ -35,10 +37,12 @@ export default function SidePanel() {
       scale: 2,
     })
     const link = document.createElement('a')
-    link.download = `observatorio-${activePanel}-${new Date().toISOString().slice(0, 10)}.png`
+    const fname = `observatorio-${activePanel}-${new Date().toISOString().slice(0, 10)}.png`
+    link.download = fname
     link.href = canvas.toDataURL('image/png')
     link.click()
-  }, [activePanel])
+    showToast(`${fname} exportado`)
+  }, [activePanel, showToast])
 
   return (
     <div

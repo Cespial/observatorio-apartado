@@ -3,6 +3,8 @@ import { useStore } from '../store'
 export default function Header() {
   const theme = useStore((s) => s.theme)
   const toggleTheme = useStore((s) => s.toggleTheme)
+  const showToast = useStore((s) => s.showToast)
+  const catalogSummary = useStore((s) => s.catalogSummary)
 
   return (
     <header
@@ -47,7 +49,9 @@ export default function Header() {
             }}
           />
           <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-            55 tablas &middot; 123,270 registros
+            {catalogSummary
+              ? `${catalogSummary.tables} tablas \u00B7 ${catalogSummary.records?.toLocaleString('es-CO')} registros`
+              : 'Cargando...'}
           </span>
         </div>
 
@@ -77,7 +81,7 @@ export default function Header() {
           onClick={() => {
             const url = `${window.location.origin}${window.location.pathname}?embed=true`
             navigator.clipboard.writeText(url)
-            alert('URL de embed copiada al portapapeles')
+            showToast('URL de embed copiada al portapapeles')
           }}
           title="Copiar URL embed"
           style={{

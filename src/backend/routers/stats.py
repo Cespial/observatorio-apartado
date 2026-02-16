@@ -2,13 +2,14 @@
 Resumen ejecutivo del municipio — dashboard summary
 """
 from fastapi import APIRouter
-from ..database import engine
+from ..database import engine, cached
 from sqlalchemy import text
 
 router = APIRouter(prefix="/api/stats", tags=["Resumen"])
 
 
 @router.get("/summary")
+@cached(ttl_seconds=600)
 def get_summary():
     """
     Resumen ejecutivo de Apartadó — tarjetas principales del dashboard.
@@ -117,7 +118,38 @@ def get_summary():
     return stats
 
 
+@router.get("/catalog-summary")
+@cached(ttl_seconds=3600)
+def get_catalog_summary():
+    """Resumen ligero del catálogo: total de tablas y registros."""
+    sql = """
+        SELECT COUNT(*) AS tables,
+               SUM(cnt) AS records
+        FROM (
+            SELECT schemaname, tablename,
+                   (xpath('/row/cnt/text()',
+                     xml_content))[1]::text::bigint AS cnt
+            FROM (
+                SELECT schemaname, tablename,
+                       query_to_xml(
+                         format('SELECT COUNT(*) AS cnt FROM %I.%I', schemaname, tablename),
+                         false, true, ''
+                       ) AS xml_content
+                FROM pg_tables
+                WHERE schemaname IN ('cartografia','socioeconomico','seguridad','servicios','catastro')
+            ) sub
+        ) counts
+    """
+    with engine.connect() as conn:
+        row = conn.execute(text(sql)).fetchone()
+    return {
+        "tables": row[0] if row else 0,
+        "records": row[1] if row else 0,
+    }
+
+
 @router.get("/data-catalog")
+@cached(ttl_seconds=3600)
 def get_data_catalog():
     """Catálogo completo de datos disponibles en la plataforma."""
     catalog = []

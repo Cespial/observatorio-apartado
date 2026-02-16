@@ -1,3 +1,5 @@
+import { useStore } from '../store'
+
 export function SkeletonKPI({ count = 4 }) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -64,7 +66,10 @@ export function ExportCSVButton({ rows, filename }) {
   if (!rows?.length) return null
   return (
     <button
-      onClick={() => exportCSV(rows, filename)}
+      onClick={() => {
+        exportCSV(rows, filename)
+        useStore.getState().showToast(`${filename} descargado`)
+      }}
       style={{
         background: 'var(--bg-tertiary)',
         border: '1px solid var(--border)',

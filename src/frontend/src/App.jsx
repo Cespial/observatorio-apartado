@@ -8,15 +8,44 @@ import SidePanel from './components/SidePanel'
 import Footer from './components/Footer'
 import WelcomeOverlay from './components/WelcomeOverlay'
 
+function Toast() {
+  const toast = useStore((s) => s.toast)
+  if (!toast) return null
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: 24,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      background: 'var(--bg-card)',
+      color: 'var(--text-primary)',
+      border: '1px solid var(--border)',
+      borderRadius: 8,
+      padding: '8px 20px',
+      fontSize: 13,
+      fontWeight: 500,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+      zIndex: 9999,
+      animation: 'fade-in 0.2s ease-out',
+      pointerEvents: 'none',
+    }}>
+      {toast}
+    </div>
+  )
+}
+
 export default function App() {
-  const { summary, fetchSummary } = useStore()
+  const { summary, fetchSummary, fetchCatalogSummary } = useStore()
 
   const isEmbed = useMemo(() => {
     const params = new URLSearchParams(window.location.search)
     return params.get('embed') === 'true'
   }, [])
 
-  useEffect(() => { fetchSummary() }, [])
+  useEffect(() => {
+    fetchSummary()
+    fetchCatalogSummary()
+  }, [])
 
   return (
     <>
@@ -31,6 +60,7 @@ export default function App() {
         <SidePanel />
       </div>
       {!isEmbed && <Footer />}
+      <Toast />
     </>
   )
 }

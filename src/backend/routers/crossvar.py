@@ -4,7 +4,7 @@ Permite cruzar cualquier par de variables y obtener scatter plots, correlaciones
 mapas bivariados y análisis espaciales.
 """
 from fastapi import APIRouter, Query, HTTPException
-from ..database import engine
+from ..database import engine, cached
 from sqlalchemy import text
 import json
 
@@ -153,6 +153,7 @@ VARIABLES = {
 
 
 @router.get("/variables")
+@cached(ttl_seconds=3600)
 def list_variables():
     """Listar todas las variables disponibles para cruces."""
     return [
@@ -253,6 +254,7 @@ def timeseries_comparison(
 
 
 @router.get("/security-matrix")
+@cached(ttl_seconds=600)
 def security_matrix():
     """
     Matriz completa de seguridad: todos los tipos de delito por año.

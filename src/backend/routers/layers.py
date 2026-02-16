@@ -3,7 +3,7 @@ Gestión de capas — catálogo de todas las capas disponibles
 """
 import json
 from fastapi import APIRouter, HTTPException
-from ..database import engine
+from ..database import engine, cached
 from sqlalchemy import text
 
 router = APIRouter(prefix="/api/layers", tags=["Capas"])
@@ -95,19 +95,19 @@ LAYERS_CATALOG = [
 
 
 @router.get("")
+@cached(ttl_seconds=600)
 def list_layers():
     """Listar todas las capas disponibles con conteo de registros."""
-    results = []
-    for layer in LAYERS_CATALOG:
-        try:
-            with engine.connect() as conn:
-                count = conn.execute(
-                    text(f"SELECT COUNT(*) FROM {layer['schema']}.{layer['table']}")
-                ).scalar()
-        except Exception:
-            count = 0
-        results.append({**layer, "record_count": count})
-    return results
+    parts = [
+        f"SELECT '{layer['id']}' AS id, COUNT(*) AS cnt FROM {layer['schema']}.{layer['table']}"
+        for layer in LAYERS_CATALOG
+    ]
+    sql = " UNION ALL ".join(parts)
+    counts = {}
+    with engine.connect() as conn:
+        for row in conn.execute(text(sql)).fetchall():
+            counts[row[0]] = row[1]
+    return [{**layer, "record_count": counts.get(layer["id"], 0)} for layer in LAYERS_CATALOG]
 
 
 @router.get("/{layer_id}/geojson")

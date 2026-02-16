@@ -3,9 +3,11 @@ Observatorio de Ciudades — Apartadó, Antioquia
 API Backend (FastAPI)
 """
 import logging
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from .routers import layers, geo, indicators, crossvar, stats
 
@@ -50,13 +52,30 @@ app = FastAPI(
     openapi_tags=TAGS_METADATA,
 )
 
+ALLOWED_ORIGINS = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000",
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(layers.router)
 app.include_router(geo.router)

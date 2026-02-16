@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useStore } from '../store'
 
 const DISMISSED_KEY = 'observatorio-welcome-dismissed'
 
 export default function WelcomeOverlay() {
   const [visible, setVisible] = useState(false)
   const [closing, setClosing] = useState(false)
+  const catalogSummary = useStore((s) => s.catalogSummary)
 
   useEffect(() => {
     if (!localStorage.getItem(DISMISSED_KEY)) {
@@ -66,8 +68,8 @@ export default function WelcomeOverlay() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
           {[
-            { n: '55', label: 'Tablas de datos' },
-            { n: '123,270', label: 'Registros' },
+            { n: catalogSummary ? String(catalogSummary.tables) : '...', label: 'Tablas de datos' },
+            { n: catalogSummary ? catalogSummary.records?.toLocaleString('es-CO') : '...', label: 'Registros' },
             { n: '8', label: 'Dimensiones' },
             { n: '16+', label: 'Fuentes oficiales' },
           ].map((s) => (
