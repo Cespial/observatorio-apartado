@@ -9,6 +9,7 @@ const CrossvarScatter = lazy(() => import('./CrossvarScatter'))
 const SaludTab = lazy(() => import('./SaludTab'))
 const EconomiaTab = lazy(() => import('./EconomiaTab'))
 const GobiernoTab = lazy(() => import('./GobiernoTab'))
+const CulturaTab = lazy(() => import('./CulturaTab'))
 
 const TABS = [
   { id: 'overview', label: 'General' },
@@ -17,6 +18,7 @@ const TABS = [
   { id: 'salud', label: 'Salud' },
   { id: 'economia', label: 'Economia' },
   { id: 'gobierno', label: 'Gobierno' },
+  { id: 'cultura', label: 'Cultura' },
   { id: 'victimas', label: 'Victimas' },
   { id: 'cruces', label: 'Cruces' },
 ]
@@ -59,10 +61,12 @@ export default function SidePanel() {
       }}
     >
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
-        <div className="tab-bar" style={{ flex: 1, flexWrap: 'wrap', border: 'none' }}>
+        <div className="tab-bar" role="tablist" aria-label="Secciones del observatorio" style={{ flex: 1, flexWrap: 'wrap', border: 'none' }}>
           {TABS.map((tab) => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activePanel === tab.id}
               onClick={() => setActivePanel(tab.id)}
               className={activePanel === tab.id ? 'tab-item active' : 'tab-item'}
             >
@@ -72,6 +76,7 @@ export default function SidePanel() {
         </div>
         <button
           onClick={handleExport}
+          aria-label="Exportar como imagen PNG"
           title="Exportar como imagen PNG"
           style={{
             background: 'var(--bg-tertiary)',
@@ -101,6 +106,7 @@ export default function SidePanel() {
           {activePanel === 'salud' && <SaludTab />}
           {activePanel === 'economia' && <EconomiaTab />}
           {activePanel === 'gobierno' && <GobiernoTab />}
+          {activePanel === 'cultura' && <CulturaTab />}
           {activePanel === 'victimas' && <VictimasChart />}
           {activePanel === 'cruces' && <CrossvarScatter />}
         </Suspense>

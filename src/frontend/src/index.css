@@ -68,6 +68,15 @@ body {
 
 #root { height: 100vh; display: flex; flex-direction: column; }
 
+/* Focus styles for keyboard accessibility */
+button:focus-visible,
+select:focus-visible,
+[role="tab"]:focus-visible,
+[role="switch"]:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 .font-mono { font-family: 'IBM Plex Mono', 'SF Mono', monospace; }
 
 .card {

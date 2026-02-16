@@ -539,3 +539,37 @@ def get_pobreza():
     """)
 
     return {"terridata": terridata, "ipm_detalle": ipm}
+
+
+# ── Cultura ──────────────────────────────────────────────────────
+@router.get("/cultura/espacios")
+def get_espacios_culturales():
+    """Espacios culturales registrados en Apartadó."""
+    return query_dicts("""
+        SELECT tipo_lugar, nombre_del_lugar AS nombre, descripci_n AS descripcion,
+               direcci_n_f_sica AS direccion, latitud, longitud, fuente
+        FROM servicios.espacios_culturales_raw
+        ORDER BY tipo_lugar, nombre_del_lugar
+    """)
+
+
+@router.get("/cultura/turismo-detalle")
+def get_turismo_detalle():
+    """Establecimientos turísticos con detalle (RNT)."""
+    rows = query_dicts("""
+        SELECT razon_social_establecimiento AS nombre, categoria, sub_categoria,
+               CAST(NULLIF(habitaciones,'') AS INT) AS habitaciones,
+               CAST(NULLIF(camas,'') AS INT) AS camas,
+               CAST(NULLIF(num_emp1,'') AS INT) AS empleados,
+               estado_rnt AS estado, ano
+        FROM servicios.rnt_turismo_raw
+        ORDER BY categoria, razon_social_establecimiento
+    """)
+    by_cat = {}
+    for r in rows:
+        cat = r["categoria"] or "Otro"
+        by_cat.setdefault(cat, []).append(r)
+    return {
+        "total": len(rows),
+        "por_categoria": {k: {"count": len(v), "establecimientos": v} for k, v in by_cat.items()},
+    }

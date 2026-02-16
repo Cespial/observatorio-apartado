@@ -11,6 +11,8 @@ const COLORS = {
   'Hurtos': '#0050B3',
   'Delitos Sexuales': '#FA8C16',
   'Violencia Intrafamiliar': '#1890FF',
+  'Lesiones Personales': '#52C41A',
+  'Masacres': '#722ED1',
 }
 
 const RANGE_STYLE = {
@@ -60,7 +62,7 @@ export default function SecurityChart() {
           </select>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer width="100%" height={260}>
         <AreaChart data={pivoted}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
           <XAxis dataKey="anio" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />

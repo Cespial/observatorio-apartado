@@ -52,7 +52,12 @@ export default function LayerPanel() {
           return (
             <div key={layer.id}>
               <div
+                role="switch"
+                aria-checked={active}
+                aria-label={`Capa ${layer.label}`}
+                tabIndex={0}
                 onClick={() => toggleLayer(layer.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLayer(layer.id); } }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

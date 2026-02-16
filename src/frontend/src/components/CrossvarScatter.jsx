@@ -5,16 +5,9 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
-const VARIABLE_OPTIONS = [
-  { id: 'homicidios_anual', label: 'Homicidios/ano' },
-  { id: 'hurtos_anual', label: 'Hurtos/ano' },
-  { id: 'vif_anual', label: 'VIF/ano' },
-  { id: 'delitos_sexuales_anual', label: 'Del. Sexuales/ano' },
-  { id: 'icfes_global', label: 'ICFES Global' },
-  { id: 'icfes_matematicas', label: 'ICFES Matematicas' },
-  { id: 'matricula', label: 'Matricula' },
-  { id: 'places_categoria', label: 'Negocios/cat.' },
-  { id: 'places_rating', label: 'Rating negocios' },
+const FALLBACK_OPTIONS = [
+  { id: 'homicidios_anual', name: 'Homicidios/ano' },
+  { id: 'hurtos_anual', name: 'Hurtos/ano' },
 ]
 
 function getCorrelationLabel(r) {
@@ -26,11 +19,14 @@ function getCorrelationLabel(r) {
 }
 
 export default function CrossvarScatter() {
-  const { crossvarData, fetchCrossvar } = useStore()
+  const { crossvarData, fetchCrossvar, crossvarVariables, fetchCrossvarVariables } = useStore()
   const [varX, setVarX] = useState('homicidios_anual')
   const [varY, setVarY] = useState('hurtos_anual')
 
+  useEffect(() => { fetchCrossvarVariables() }, [])
   useEffect(() => { fetchCrossvar(varX, varY) }, [varX, varY])
+
+  const variables = crossvarVariables?.length ? crossvarVariables : FALLBACK_OPTIONS
 
   const selectStyle = {
     background: 'var(--bg-card)',
@@ -50,13 +46,13 @@ export default function CrossvarScatter() {
         <div>
           <label style={{ fontSize: 10, color: 'var(--text-secondary)', display: 'block', marginBottom: 2 }}>EJE X</label>
           <select value={varX} onChange={(e) => setVarX(e.target.value)} style={selectStyle}>
-            {VARIABLE_OPTIONS.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+            {variables.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
         </div>
         <div>
           <label style={{ fontSize: 10, color: 'var(--text-secondary)', display: 'block', marginBottom: 2 }}>EJE Y</label>
           <select value={varY} onChange={(e) => setVarY(e.target.value)} style={selectStyle}>
-            {VARIABLE_OPTIONS.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+            {variables.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
         </div>
       </div>

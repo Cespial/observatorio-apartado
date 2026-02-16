@@ -279,6 +279,12 @@ def security_matrix():
         UNION ALL
         SELECT 'Violencia Intrafamiliar', EXTRACT(YEAR FROM fecha_hecho)::int, SUM(CAST(cantidad AS INT))
         FROM seguridad.violencia_intrafamiliar_raw WHERE fecha_hecho IS NOT NULL GROUP BY EXTRACT(YEAR FROM fecha_hecho)::int
+        UNION ALL
+        SELECT 'Lesiones Personales', EXTRACT(YEAR FROM fecha_hecho)::int, SUM(CAST(cantidad AS INT))
+        FROM seguridad.lesiones_personales_raw WHERE fecha_hecho IS NOT NULL GROUP BY EXTRACT(YEAR FROM fecha_hecho)::int
+        UNION ALL
+        SELECT 'Masacres', a_o::int, SUM(CAST(total_de_v_ctimas_del_caso AS INT))
+        FROM seguridad.masacres_raw WHERE a_o IS NOT NULL GROUP BY a_o::int
         ORDER BY tipo, anio
     """
     with engine.connect() as conn:

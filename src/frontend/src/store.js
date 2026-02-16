@@ -66,6 +66,8 @@ export const useStore = create((set, get) => ({
   saludData: null,
   economiaData: null,
   gobiernoData: null,
+  culturaData: null,
+  crossvarVariables: null,
   errors: {},
   selectedCategory: null,
   setSelectedCategory: (cat) => set({ selectedCategory: cat }),
@@ -214,6 +216,27 @@ export const useStore = create((set, get) => ({
     } catch (e) {
       console.error('fetchGobierno:', e)
       set((s) => ({ errors: { ...s.errors, gobierno: e.message } }))
+    }
+  },
+  fetchCultura: async () => {
+    if (get().culturaData) return
+    try {
+      const [espacios, turismo] = await Promise.all([
+        safeFetch(`${API}/indicators/cultura/espacios`),
+        safeFetch(`${API}/indicators/cultura/turismo-detalle`),
+      ])
+      set({ culturaData: { espacios, turismo } })
+    } catch (e) {
+      console.error('fetchCultura:', e)
+      set((s) => ({ errors: { ...s.errors, cultura: e.message } }))
+    }
+  },
+  fetchCrossvarVariables: async () => {
+    if (get().crossvarVariables) return
+    try {
+      set({ crossvarVariables: await safeFetch(`${API}/crossvar/variables`) })
+    } catch (e) {
+      console.error('fetchCrossvarVariables:', e)
     }
   },
 }))

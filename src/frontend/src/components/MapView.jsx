@@ -251,6 +251,7 @@ export default function MapView() {
         >
           <button
             onClick={() => setPopup(null)}
+            aria-label="Cerrar popup"
             style={{
               position: 'absolute', top: 4, right: 8,
               background: 'none', border: 'none', cursor: 'pointer',

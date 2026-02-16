@@ -58,6 +58,7 @@ export default function Header() {
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
+          aria-label={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
           title={theme === 'light' ? 'Modo oscuro' : 'Modo claro'}
           style={{
             background: 'var(--bg-tertiary)',
@@ -83,6 +84,7 @@ export default function Header() {
             navigator.clipboard.writeText(url)
             showToast('URL de embed copiada al portapapeles')
           }}
+          aria-label="Copiar URL de embed"
           title="Copiar URL embed"
           style={{
             background: 'var(--bg-tertiary)',
