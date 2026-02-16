@@ -1,5 +1,5 @@
 const CARDS = [
-  { key: 'poblacion_censal_2018', label: 'Poblacion censal', source: 'DANE', year: '2018' },
+  { key: 'poblacion_total', label: 'Poblacion total', source: 'DANE', year: '2019' },
   { key: 'manzanas_censales', label: 'Manzanas censales', source: 'MGN-DANE', year: '2023' },
   { key: 'edificaciones_osm', label: 'Edificaciones', source: 'OSM', year: '2025' },
   { key: 'establecimientos_comerciales', label: 'Negocios mapeados', source: 'Google Places', year: '2025' },

@@ -1,7 +1,8 @@
 """
 Gestión de capas — catálogo de todas las capas disponibles
 """
-from fastapi import APIRouter
+import json
+from fastapi import APIRouter, HTTPException
 from ..database import engine
 from sqlalchemy import text
 
@@ -114,7 +115,7 @@ def get_layer_geojson(layer_id: str, limit: int = 5000):
     """Obtener GeoJSON completo de una capa."""
     layer = next((l for l in LAYERS_CATALOG if l["id"] == layer_id), None)
     if not layer:
-        return {"error": f"Capa '{layer_id}' no encontrada"}
+        raise HTTPException(status_code=404, detail=f"Capa '{layer_id}' no encontrada")
 
     import geopandas as gpd
     with engine.connect() as conn:
@@ -126,7 +127,7 @@ def get_layer_geojson(layer_id: str, limit: int = 5000):
         )
     if gdf.empty:
         return {"type": "FeatureCollection", "features": []}
-    return eval(gdf.to_json())
+    return json.loads(gdf.to_json())
 
 
 @router.get("/{layer_id}/stats")
@@ -134,7 +135,7 @@ def get_layer_stats(layer_id: str):
     """Estadísticas básicas de una capa (bbox, conteo, columnas)."""
     layer = next((l for l in LAYERS_CATALOG if l["id"] == layer_id), None)
     if not layer:
-        return {"error": f"Capa '{layer_id}' no encontrada"}
+        raise HTTPException(status_code=404, detail=f"Capa '{layer_id}' no encontrada")
 
     with engine.connect() as conn:
         count = conn.execute(

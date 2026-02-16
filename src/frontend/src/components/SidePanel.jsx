@@ -1,12 +1,14 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, lazy, Suspense } from 'react'
 import { useStore } from '../store'
-import SecurityChart from './SecurityChart'
-import IcfesChart from './IcfesChart'
-import VictimasChart from './VictimasChart'
-import CrossvarScatter from './CrossvarScatter'
-import SaludTab from './SaludTab'
-import EconomiaTab from './EconomiaTab'
-import GobiernoTab from './GobiernoTab'
+import { SkeletonTab } from './Skeleton'
+
+const SecurityChart = lazy(() => import('./SecurityChart'))
+const IcfesChart = lazy(() => import('./IcfesChart'))
+const VictimasChart = lazy(() => import('./VictimasChart'))
+const CrossvarScatter = lazy(() => import('./CrossvarScatter'))
+const SaludTab = lazy(() => import('./SaludTab'))
+const EconomiaTab = lazy(() => import('./EconomiaTab'))
+const GobiernoTab = lazy(() => import('./GobiernoTab'))
 
 const TABS = [
   { id: 'overview', label: 'General' },
@@ -89,13 +91,15 @@ export default function SidePanel() {
 
       <div ref={contentRef} style={{ flex: 1, padding: 16 }}>
         {activePanel === 'overview' && <OverviewPanel summary={summary} />}
-        {activePanel === 'seguridad' && <SecurityChart />}
-        {activePanel === 'educacion' && <IcfesChart />}
-        {activePanel === 'salud' && <SaludTab />}
-        {activePanel === 'economia' && <EconomiaTab />}
-        {activePanel === 'gobierno' && <GobiernoTab />}
-        {activePanel === 'victimas' && <VictimasChart />}
-        {activePanel === 'cruces' && <CrossvarScatter />}
+        <Suspense fallback={<SkeletonTab />}>
+          {activePanel === 'seguridad' && <SecurityChart />}
+          {activePanel === 'educacion' && <IcfesChart />}
+          {activePanel === 'salud' && <SaludTab />}
+          {activePanel === 'economia' && <EconomiaTab />}
+          {activePanel === 'gobierno' && <GobiernoTab />}
+          {activePanel === 'victimas' && <VictimasChart />}
+          {activePanel === 'cruces' && <CrossvarScatter />}
+        </Suspense>
       </div>
     </div>
   )
@@ -108,7 +112,7 @@ function OverviewPanel({ summary }) {
     { label: 'Municipio', value: `${summary.municipio}, ${summary.departamento}` },
     { label: 'DIVIPOLA', value: summary.divipola },
     { label: 'Region', value: summary.region },
-    { label: 'Poblacion censal', value: summary.poblacion_censal_2018?.toLocaleString('es-CO') },
+    { label: 'Poblacion total', value: summary.poblacion_total?.toLocaleString('es-CO') },
     { label: 'Matricula total', value: summary.matricula_total?.toLocaleString('es-CO') },
     { label: 'ICFES promedio', value: summary.icfes?.promedio_global },
     { label: 'Total hurtos', value: summary.total_hurtos?.toLocaleString('es-CO') },

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useStore } from '../store'
-import { SkeletonTab } from './Skeleton'
+import { SkeletonTab, ErrorBanner } from './Skeleton'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, AreaChart, Area, Cell, PieChart, Pie,
@@ -9,10 +9,11 @@ import {
 const SECTOR_COLORS = ['#0050B3', '#1890FF', '#40A9FF', '#69C0FF', '#52C41A', '#FA8C16', '#F5222D', '#8E94A9']
 
 export default function EconomiaTab() {
-  const { economiaData, fetchEconomia } = useStore()
+  const { economiaData, fetchEconomia, errors } = useStore()
 
   useEffect(() => { fetchEconomia() }, [])
 
+  if (errors.economia) return <ErrorBanner message={errors.economia} />
   if (!economiaData) return <SkeletonTab />
 
   const { internet, secop, turismo, terridata_economia } = economiaData
@@ -65,11 +66,11 @@ export default function EconomiaTab() {
           <h4 className="section-title" style={{ fontSize: 11 }}>Composicion del PIB por Sector</h4>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={sectorData} layout="vertical" margin={{ left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EBEEF3" />
-              <XAxis type="number" tick={{ fill: '#5E6687', fontSize: 10 }} unit="%" />
-              <YAxis dataKey="sector" type="category" tick={{ fill: '#5E6687', fontSize: 8 }} width={120} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+              <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} unit="%" />
+              <YAxis dataKey="sector" type="category" tick={{ fill: 'var(--text-secondary)', fontSize: 8 }} width={120} />
               <Tooltip
-                contentStyle={{ background: '#FFFFFF', border: '1px solid #DDE1E8', borderRadius: 6, fontSize: 12 }}
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
                 formatter={(v) => [`${v.toFixed(1)}%`, 'Participacion']}
                 labelFormatter={(l, payload) => payload?.[0]?.payload?.full || l}
               />
@@ -90,12 +91,12 @@ export default function EconomiaTab() {
           <h4 className="section-title" style={{ fontSize: 11, marginTop: 16 }}>Accesos Internet Fijo</h4>
           <ResponsiveContainer width="100%" height={160}>
             <AreaChart data={internet}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EBEEF3" />
-              <XAxis dataKey="anio" tick={{ fill: '#5E6687', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#5E6687', fontSize: 10 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+              <XAxis dataKey="anio" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
+              <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
               <Tooltip
-                contentStyle={{ background: '#FFFFFF', border: '1px solid #DDE1E8', borderRadius: 6, fontSize: 12 }}
-                labelStyle={{ color: '#1A1F36', fontWeight: 600 }}
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
+                labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
                 formatter={(v) => [v.toLocaleString('es-CO'), 'Accesos']}
               />
               <Area type="monotone" dataKey="total_accesos" stroke="#0050B3" fill="#0050B3" fillOpacity={0.15} strokeWidth={2} name="Accesos" />
@@ -111,11 +112,11 @@ export default function EconomiaTab() {
           <h4 className="section-title" style={{ fontSize: 11, marginTop: 16 }}>Contratacion Publica (SECOP)</h4>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={secopTop} layout="vertical" margin={{ left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EBEEF3" />
-              <XAxis type="number" tick={{ fill: '#5E6687', fontSize: 10 }} />
-              <YAxis dataKey="tipo" type="category" tick={{ fill: '#5E6687', fontSize: 8 }} width={110} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+              <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
+              <YAxis dataKey="tipo" type="category" tick={{ fill: 'var(--text-secondary)', fontSize: 8 }} width={110} />
               <Tooltip
-                contentStyle={{ background: '#FFFFFF', border: '1px solid #DDE1E8', borderRadius: 6, fontSize: 12 }}
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
                 formatter={(v, name) => [v.toLocaleString('es-CO'), name === 'contratos' ? 'Contratos' : 'Valor (M COP)']}
                 labelFormatter={(l, payload) => payload?.[0]?.payload?.full || l}
               />
@@ -132,9 +133,9 @@ export default function EconomiaTab() {
           <h4 className="section-title" style={{ fontSize: 11, marginTop: 16 }}>Turismo (RNT)</h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {turismoTop.map((r, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 10px', background: '#FFFFFF', borderRadius: 6, border: '1px solid #DDE1E8' }}>
-                <span style={{ color: '#5E6687', fontSize: 11 }}>{r.cat}</span>
-                <span style={{ color: '#0050B3', fontSize: 11, fontWeight: 600 }}>{r.n}</span>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 10px', background: 'var(--bg-card)', borderRadius: 6, border: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: 11 }}>{r.cat}</span>
+                <span style={{ color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600 }}>{r.n}</span>
               </div>
             ))}
           </div>

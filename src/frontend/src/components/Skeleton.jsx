@@ -22,6 +22,23 @@ export function SkeletonBars({ count = 5 }) {
   )
 }
 
+export function ErrorBanner({ message }) {
+  return (
+    <div style={{
+      padding: '12px 16px',
+      background: 'var(--semantic-negative-bg, #FFF1F0)',
+      border: '1px solid var(--semantic-negative)',
+      borderRadius: 8,
+      color: 'var(--semantic-negative)',
+      fontSize: 13,
+      marginBottom: 12,
+    }}>
+      <strong>Error al cargar datos</strong>
+      {message && <div style={{ fontSize: 11, marginTop: 4, opacity: 0.8 }}>{message}</div>}
+    </div>
+  )
+}
+
 export function SkeletonTab() {
   return (
     <div style={{ padding: 4 }}>

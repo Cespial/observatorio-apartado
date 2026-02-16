@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useStore } from '../store'
-import { SkeletonTab } from './Skeleton'
+import { SkeletonTab, ErrorBanner } from './Skeleton'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -9,10 +9,11 @@ import {
 const COLORS = ['#0050B3', '#1890FF', '#40A9FF', '#69C0FF', '#91D5FF', '#B7DCFF', '#D6EBFF', '#E6F4FF']
 
 export default function VictimasChart() {
-  const { victimasData, fetchVictimas } = useStore()
+  const { victimasData, fetchVictimas, errors } = useStore()
 
   useEffect(() => { fetchVictimas() }, [])
 
+  if (errors.victimas) return <ErrorBanner message={errors.victimas} />
   if (!victimasData) return <SkeletonTab />
 
   const data = victimasData
@@ -29,11 +30,11 @@ export default function VictimasChart() {
       <h3 className="section-title">Victimas por Hecho Victimizante</h3>
       <ResponsiveContainer width="100%" height={250}>
         <BarChart data={data} layout="vertical" margin={{ left: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#EBEEF3" />
-          <XAxis type="number" tick={{ fill: '#5E6687', fontSize: 10 }} />
-          <YAxis dataKey="hecho" type="category" tick={{ fill: '#5E6687', fontSize: 9 }} width={140} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+          <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
+          <YAxis dataKey="hecho" type="category" tick={{ fill: 'var(--text-secondary)', fontSize: 9 }} width={140} />
           <Tooltip
-            contentStyle={{ background: '#FFFFFF', border: '1px solid #DDE1E8', borderRadius: 6, fontSize: 12 }}
+            contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
             formatter={(v) => [v.toLocaleString('es-CO'), 'Personas']}
             labelFormatter={(l, payload) => payload?.[0]?.payload?.full || l}
           />

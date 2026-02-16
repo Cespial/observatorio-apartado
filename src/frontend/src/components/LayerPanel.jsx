@@ -1,7 +1,7 @@
 import { useStore } from '../store';
 
 const LAYERS = [
-  { id: 'limite_municipal', label: 'Límite Municipal', color: '#0050B3' },
+  { id: 'limite_municipal', label: 'Limite Municipal', color: '#0050B3' },
   { id: 'manzanas_censales', label: 'Manzanas 3D', color: '#1890FF' },
   { id: 'osm_edificaciones', label: 'Edificaciones', color: '#5E6687' },
   { id: 'osm_vias', label: 'Red Vial', color: '#40A9FF' },
@@ -20,12 +20,12 @@ export default function LayerPanel() {
         top: 12,
         left: 12,
         zIndex: 10,
-        background: '#FFFFFF',
+        background: 'var(--bg-card)',
         borderRadius: 8,
-        border: '1px solid #DDE1E8',
+        border: '1px solid var(--border)',
         padding: 12,
         minWidth: 190,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       }}
     >
       <div
@@ -33,7 +33,7 @@ export default function LayerPanel() {
           fontSize: 10,
           fontWeight: 700,
           letterSpacing: '0.12em',
-          color: '#1A1F36',
+          color: 'var(--text-primary)',
           marginBottom: 8,
           textTransform: 'uppercase',
         }}
@@ -57,7 +57,6 @@ export default function LayerPanel() {
                 transition: 'opacity 0.2s ease',
               }}
             >
-              {/* Color dot */}
               <span
                 style={{
                   width: 8,
@@ -69,18 +68,16 @@ export default function LayerPanel() {
                 }}
               />
 
-              {/* Label */}
-              <span style={{ fontSize: 12, color: active ? '#1A1F36' : '#5E6687', flex: 1 }}>
+              <span style={{ fontSize: 12, color: active ? 'var(--text-primary)' : 'var(--text-secondary)', flex: 1 }}>
                 {layer.label}
               </span>
 
-              {/* Toggle indicator */}
               <span
                 style={{
                   width: 28,
                   height: 14,
                   borderRadius: 7,
-                  background: active ? 'rgba(0,80,179,0.2)' : '#DDE1E8',
+                  background: active ? 'rgba(0,80,179,0.2)' : 'var(--border)',
                   position: 'relative',
                   transition: 'background 0.2s ease',
                   flexShrink: 0,
@@ -94,7 +91,7 @@ export default function LayerPanel() {
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    background: active ? '#0050B3' : '#DDE1E8',
+                    background: active ? 'var(--accent-primary)' : 'var(--border)',
                     transition: 'left 0.2s ease, background 0.2s ease',
                   }}
                 />

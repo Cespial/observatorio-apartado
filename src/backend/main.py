@@ -2,9 +2,14 @@
 Observatorio de Ciudades — Apartadó, Antioquia
 API Backend (FastAPI)
 """
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from .routers import layers, geo, indicators, crossvar, stats
+
+logger = logging.getLogger("observatorio")
 
 TAGS_METADATA = [
     {"name": "Root", "description": "Health check y catálogo de endpoints"},
@@ -58,6 +63,18 @@ app.include_router(geo.router)
 app.include_router(indicators.router)
 app.include_router(crossvar.router)
 app.include_router(stats.router)
+
+
+@app.exception_handler(SQLAlchemyError)
+async def db_exception_handler(request: Request, exc: SQLAlchemyError):
+    logger.error("Database error on %s: %s", request.url.path, exc)
+    return JSONResponse(status_code=503, content={"detail": "Error de conexión a la base de datos"})
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled error on %s: %s", request.url.path, exc)
+    return JSONResponse(status_code=500, content={"detail": "Error interno del servidor"})
 
 
 @app.get("/", tags=["Root"])

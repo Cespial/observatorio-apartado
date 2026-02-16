@@ -9,6 +9,12 @@ if (typeof document !== 'undefined') {
   document.documentElement.setAttribute('data-theme', savedTheme)
 }
 
+async function safeFetch(url) {
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
+  return r.json()
+}
+
 export const useStore = create((set, get) => ({
   theme: savedTheme,
   toggleTheme: () => {
@@ -44,111 +50,152 @@ export const useStore = create((set, get) => ({
   saludData: null,
   economiaData: null,
   gobiernoData: null,
+  errors: {},
   activePanel: 'overview',
   setActivePanel: (p) => set({ activePanel: p }),
 
   fetchSummary: async () => {
-    const r = await fetch(`${API}/stats/summary`)
-    set({ summary: await r.json() })
+    try {
+      set({ summary: await safeFetch(`${API}/stats/summary`) })
+    } catch (e) {
+      console.error('fetchSummary:', e)
+      set((s) => ({ errors: { ...s.errors, summary: e.message } }))
+    }
   },
   fetchLayerGeoJSON: async (id) => {
     if (get().layerData[id]) return
-    const r = await fetch(`${API}/layers/${id}/geojson`)
-    const d = await r.json()
-    set((s) => ({ layerData: { ...s.layerData, [id]: d } }))
+    try {
+      const d = await safeFetch(`${API}/layers/${id}/geojson`)
+      set((s) => ({ layerData: { ...s.layerData, [id]: d } }))
+    } catch (e) {
+      console.error(`fetchLayer(${id}):`, e)
+    }
   },
   fetchManzanas: async () => {
     if (get().layerData.manzanas) return
-    const r = await fetch(`${API}/geo/manzanas?limit=5000`)
-    const d = await r.json()
-    set((s) => ({ layerData: { ...s.layerData, manzanas: d } }))
+    try {
+      const d = await safeFetch(`${API}/geo/manzanas?limit=5000`)
+      set((s) => ({ layerData: { ...s.layerData, manzanas: d } }))
+    } catch (e) {
+      console.error('fetchManzanas:', e)
+    }
   },
   fetchPlaces: async () => {
     if (get().layerData.places) return
-    const [p, c] = await Promise.all([
-      fetch(`${API}/geo/places?limit=2000`),
-      fetch(`${API}/geo/places/categories`),
-    ])
-    const pData = await p.json()
-    const cData = await c.json()
-    set((s) => ({
-      layerData: { ...s.layerData, places: pData },
-      placesCategories: cData,
-    }))
+    try {
+      const [pData, cData] = await Promise.all([
+        safeFetch(`${API}/geo/places?limit=2000`),
+        safeFetch(`${API}/geo/places/categories`),
+      ])
+      set((s) => ({
+        layerData: { ...s.layerData, places: pData },
+        placesCategories: cData,
+      }))
+    } catch (e) {
+      console.error('fetchPlaces:', e)
+    }
   },
   fetchPlacesHeatmap: async () => {
     if (get().layerData.placesHeatmap) return
-    const r = await fetch(`${API}/geo/places/heatmap`)
-    const d = await r.json()
-    set((s) => ({ layerData: { ...s.layerData, placesHeatmap: d } }))
+    try {
+      const d = await safeFetch(`${API}/geo/places/heatmap`)
+      set((s) => ({ layerData: { ...s.layerData, placesHeatmap: d } }))
+    } catch (e) {
+      console.error('fetchPlacesHeatmap:', e)
+    }
   },
   fetchSecurityMatrix: async () => {
     if (get().securityMatrix) return
-    const r = await fetch(`${API}/crossvar/security-matrix`)
-    const d = await r.json()
-    set({ securityMatrix: d.data })
+    try {
+      const d = await safeFetch(`${API}/crossvar/security-matrix`)
+      set({ securityMatrix: d.data })
+    } catch (e) {
+      console.error('fetchSecurityMatrix:', e)
+      set((s) => ({ errors: { ...s.errors, seguridad: e.message } }))
+    }
   },
   fetchIcfes: async () => {
     if (get().icfesData) return
-    const r = await fetch(`${API}/indicators/icfes?aggregate=periodo`)
-    set({ icfesData: await r.json() })
+    try {
+      set({ icfesData: await safeFetch(`${API}/indicators/icfes?aggregate=periodo`) })
+    } catch (e) {
+      console.error('fetchIcfes:', e)
+      set((s) => ({ errors: { ...s.errors, educacion: e.message } }))
+    }
   },
   fetchVictimas: async () => {
     if (get().victimasData) return
-    const r = await fetch(`${API}/indicators/victimas?aggregate=hecho`)
-    set({ victimasData: await r.json() })
+    try {
+      set({ victimasData: await safeFetch(`${API}/indicators/victimas?aggregate=hecho`) })
+    } catch (e) {
+      console.error('fetchVictimas:', e)
+      set((s) => ({ errors: { ...s.errors, victimas: e.message } }))
+    }
   },
   fetchCrossvar: async (vx, vy) => {
-    const r = await fetch(`${API}/crossvar/scatter?var_x=${vx}&var_y=${vy}`)
-    set({ crossvarData: await r.json() })
+    try {
+      set({ crossvarData: await safeFetch(`${API}/crossvar/scatter?var_x=${vx}&var_y=${vy}`) })
+    } catch (e) {
+      console.error('fetchCrossvar:', e)
+      set((s) => ({ errors: { ...s.errors, cruces: e.message } }))
+    }
   },
   fetchSalud: async () => {
     if (get().saludData) return
-    const [td, ir, sv] = await Promise.all([
-      fetch(`${API}/indicators/terridata?dimension=Salud`),
-      fetch(`${API}/indicators/salud/irca`),
-      fetch(`${API}/indicators/salud/sivigila/resumen`),
-    ])
-    set({
-      saludData: {
-        terridata: await td.json(),
-        irca: await ir.json(),
-        sivigila: await sv.json(),
-      },
-    })
+    try {
+      const [td, ir, sv] = await Promise.all([
+        safeFetch(`${API}/indicators/terridata?dimension=Salud`),
+        safeFetch(`${API}/indicators/salud/irca`),
+        safeFetch(`${API}/indicators/salud/sivigila/resumen`),
+      ])
+      set({ saludData: { terridata: td, irca: ir, sivigila: sv } })
+    } catch (e) {
+      console.error('fetchSalud:', e)
+      set((s) => ({ errors: { ...s.errors, salud: e.message } }))
+    }
   },
   fetchEconomia: async () => {
     if (get().economiaData) return
-    const [inet, sec, tur, td] = await Promise.all([
-      fetch(`${API}/indicators/economia/internet/serie`),
-      fetch(`${API}/indicators/economia/secop`),
-      fetch(`${API}/indicators/economia/turismo`),
-      fetch(`${API}/indicators/terridata?dimension=${encodeURIComponent('Economía')}`),
-    ])
-    set({
-      economiaData: {
-        internet: await inet.json(),
-        secop: await sec.json(),
-        turismo: await tur.json(),
-        terridata_economia: await td.json(),
-      },
-    })
+    try {
+      const [inet, sec, tur, td] = await Promise.all([
+        safeFetch(`${API}/indicators/economia/internet/serie`),
+        safeFetch(`${API}/indicators/economia/secop`),
+        safeFetch(`${API}/indicators/economia/turismo`),
+        safeFetch(`${API}/indicators/terridata?dimension=${encodeURIComponent('Economía')}`),
+      ])
+      set({
+        economiaData: {
+          internet: inet,
+          secop: sec,
+          turismo: tur,
+          terridata_economia: td,
+        },
+      })
+    } catch (e) {
+      console.error('fetchEconomia:', e)
+      set((s) => ({ errors: { ...s.errors, economia: e.message } }))
+    }
   },
   fetchGobierno: async () => {
     if (get().gobiernoData) return
-    const [fin, des, dig, pob] = await Promise.all([
-      fetch(`${API}/indicators/gobierno/finanzas`),
-      fetch(`${API}/indicators/gobierno/desempeno`),
-      fetch(`${API}/indicators/gobierno/digital`),
-      fetch(`${API}/indicators/gobierno/pobreza`),
-    ])
-    set({
-      gobiernoData: {
-        finanzas: await fin.json(),
-        desempeno: await des.json(),
-        digital: await dig.json(),
-        pobreza: await pob.json(),
-      },
-    })
+    try {
+      const [fin, des, dig, pob] = await Promise.all([
+        safeFetch(`${API}/indicators/gobierno/finanzas`),
+        safeFetch(`${API}/indicators/gobierno/desempeno`),
+        safeFetch(`${API}/indicators/gobierno/digital`),
+        safeFetch(`${API}/indicators/gobierno/pobreza`),
+      ])
+      set({
+        gobiernoData: {
+          finanzas: fin,
+          desempeno: des,
+          digital: dig,
+          pobreza: pob,
+        },
+      })
+    } catch (e) {
+      console.error('fetchGobierno:', e)
+      set((s) => ({ errors: { ...s.errors, gobierno: e.message } }))
+    }
   },
 }))

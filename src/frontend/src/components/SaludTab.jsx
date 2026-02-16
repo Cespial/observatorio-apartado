@@ -1,25 +1,26 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../store'
-import { SkeletonTab } from './Skeleton'
+import { SkeletonTab, ErrorBanner } from './Skeleton'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LineChart, Line, Cell,
 } from 'recharts'
 
 const KPI_STYLE = {
-  background: '#FFFFFF',
+  background: 'var(--bg-card)',
   borderRadius: 8,
-  border: '1px solid #DDE1E8',
+  border: '1px solid var(--border)',
   padding: '10px 14px',
   flex: '1 1 45%',
   minWidth: 140,
 }
 
 export default function SaludTab() {
-  const { saludData, fetchSalud } = useStore()
+  const { saludData, fetchSalud, errors } = useStore()
 
   useEffect(() => { fetchSalud() }, [])
 
+  if (errors.salud) return <ErrorBanner message={errors.salud} />
   if (!saludData) return <SkeletonTab />
 
   const { terridata, irca, sivigila } = saludData
@@ -66,12 +67,12 @@ export default function SaludTab() {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
         {kpiData.map((k) => (
           <div key={k.label} style={KPI_STYLE}>
-            <div style={{ fontSize: 10, color: '#5E6687', marginBottom: 2 }}>{k.label}</div>
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 2 }}>{k.label}</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: k.color }}>
               {typeof k.value === 'number' ? k.value.toLocaleString('es-CO') : k.value}
-              {k.suffix && <span style={{ fontSize: 10, fontWeight: 400, color: '#8E94A9', marginLeft: 2 }}>{k.suffix}</span>}
+              {k.suffix && <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-muted)', marginLeft: 2 }}>{k.suffix}</span>}
             </div>
-            {k.anio && <div style={{ fontSize: 9, color: '#8E94A9' }}>{k.anio}</div>}
+            {k.anio && <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{k.anio}</div>}
           </div>
         ))}
       </div>
@@ -82,11 +83,11 @@ export default function SaludTab() {
           <h4 className="section-title" style={{ fontSize: 11 }}>Calidad del Agua (IRCA)</h4>
           <ResponsiveContainer width="100%" height={180}>
             <LineChart data={ircaChart}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EBEEF3" />
-              <XAxis dataKey="anio" tick={{ fill: '#5E6687', fontSize: 9 }} />
-              <YAxis tick={{ fill: '#5E6687', fontSize: 10 }} domain={[0, 'auto']} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+              <XAxis dataKey="anio" tick={{ fill: 'var(--text-secondary)', fontSize: 9 }} />
+              <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} domain={[0, 'auto']} />
               <Tooltip
-                contentStyle={{ background: '#FFFFFF', border: '1px solid #DDE1E8', borderRadius: 6, fontSize: 12 }}
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
                 labelStyle={{ color: '#1A1F36', fontWeight: 600 }}
               />
               <Line type="monotone" dataKey="urbano" stroke="#0050B3" strokeWidth={2} dot={{ r: 3 }} name="Urbano" />
@@ -94,7 +95,7 @@ export default function SaludTab() {
               <Line type="monotone" dataKey="total" stroke="#52C41A" strokeWidth={2} dot={{ r: 3 }} name="Total" />
             </LineChart>
           </ResponsiveContainer>
-          <div style={{ fontSize: 9, color: '#8E94A9', marginBottom: 4, fontStyle: 'italic' }}>
+          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 4, fontStyle: 'italic' }}>
             0-5: Sin riesgo | 5.1-14: Bajo | 14.1-35: Medio | 35.1-80: Alto | {'>'}80: Inviable
           </div>
           <div className="data-source">Fuente: INS — IRCA via datos.gov.co</div>
@@ -107,11 +108,11 @@ export default function SaludTab() {
           <h4 className="section-title" style={{ fontSize: 11, marginTop: 16 }}>Eventos Epidemiologicos (SIVIGILA)</h4>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={sivigilaTop} layout="vertical" margin={{ left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EBEEF3" />
-              <XAxis type="number" tick={{ fill: '#5E6687', fontSize: 10 }} />
-              <YAxis dataKey="evento" type="category" tick={{ fill: '#5E6687', fontSize: 8 }} width={130} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+              <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
+              <YAxis dataKey="evento" type="category" tick={{ fill: 'var(--text-secondary)', fontSize: 8 }} width={130} />
               <Tooltip
-                contentStyle={{ background: '#FFFFFF', border: '1px solid #DDE1E8', borderRadius: 6, fontSize: 12 }}
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
                 formatter={(v) => [v.toLocaleString('es-CO'), 'Casos']}
                 labelFormatter={(l, payload) => payload?.[0]?.payload?.full || l}
               />

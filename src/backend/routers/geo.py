@@ -78,7 +78,7 @@ def get_amenidades(
     if amenity_type:
         where = "WHERE amenity = :at"
         params["at"] = amenity_type
-    sql = f"SELECT geom, id, amenity, name, phone, website FROM cartografia.osm_amenidades {where}"
+    sql = f"SELECT geom, id, amenity, name, phone, website FROM cartografia.osm_amenidades {where} LIMIT 2000"
     with engine.connect() as conn:
         gdf = gpd.read_postgis(text(sql), conn, geom_col="geom", params=params)
     return json.loads(gdf.to_json()) if not gdf.empty else {"type": "FeatureCollection", "features": []}

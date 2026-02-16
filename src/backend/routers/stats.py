@@ -22,10 +22,12 @@ def get_summary():
 
     with engine.connect() as conn:
         # Población (manzanas censales)
-        pop = conn.execute(text(
-            "SELECT SUM(CAST(total_personas AS INT)) FROM cartografia.manzanas_censales WHERE total_personas ~ '^[0-9]+$'"
-        )).scalar()
-        stats["poblacion_censal_2018"] = int(pop) if pop else None
+        pop_row = conn.execute(text(
+            "SELECT dato_numerico::int, anio FROM socioeconomico.terridata "
+            "WHERE indicador = 'Población total' ORDER BY anio DESC LIMIT 1"
+        )).fetchone()
+        stats["poblacion_total"] = pop_row[0] if pop_row else None
+        stats["poblacion_anio"] = pop_row[1] if pop_row else None
 
         stats["manzanas_censales"] = conn.execute(text(
             "SELECT COUNT(*) FROM cartografia.manzanas_censales"

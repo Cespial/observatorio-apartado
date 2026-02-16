@@ -3,7 +3,7 @@ Motor de Cruces Multivariable — el corazón analítico del observatorio
 Permite cruzar cualquier par de variables y obtener scatter plots, correlaciones,
 mapas bivariados y análisis espaciales.
 """
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from ..database import engine
 from sqlalchemy import text
 import json
@@ -171,9 +171,9 @@ def scatter_analysis(
     Retorna puntos (x, y) con labels, coeficiente de correlación y línea de regresión.
     """
     if var_x not in VARIABLES:
-        return {"error": f"Variable '{var_x}' no existe. Usa /api/crossvar/variables"}
+        raise HTTPException(status_code=400, detail=f"Variable '{var_x}' no existe. Usa /api/crossvar/variables")
     if var_y not in VARIABLES:
-        return {"error": f"Variable '{var_y}' no existe. Usa /api/crossvar/variables"}
+        raise HTTPException(status_code=400, detail=f"Variable '{var_y}' no existe. Usa /api/crossvar/variables")
 
     vx = VARIABLES[var_x]
     vy = VARIABLES[var_y]
@@ -265,21 +265,24 @@ def security_matrix():
         "Violencia Intrafamiliar": "seguridad.violencia_intrafamiliar_raw",
     }
 
-    all_data = []
+    sql = """
+        SELECT 'Homicidios' as tipo, EXTRACT(YEAR FROM fecha_hecho)::int as anio, SUM(CAST(cantidad AS INT)) as total
+        FROM seguridad.homicidios_raw WHERE fecha_hecho IS NOT NULL GROUP BY anio
+        UNION ALL
+        SELECT 'Hurtos', EXTRACT(YEAR FROM fecha_hecho)::int, SUM(CAST(cantidad AS INT))
+        FROM seguridad.hurtos_raw WHERE fecha_hecho IS NOT NULL GROUP BY EXTRACT(YEAR FROM fecha_hecho)::int
+        UNION ALL
+        SELECT 'Delitos Sexuales', EXTRACT(YEAR FROM fecha_hecho)::int, SUM(CAST(cantidad AS INT))
+        FROM seguridad.delitos_sexuales_raw WHERE fecha_hecho IS NOT NULL GROUP BY EXTRACT(YEAR FROM fecha_hecho)::int
+        UNION ALL
+        SELECT 'Violencia Intrafamiliar', EXTRACT(YEAR FROM fecha_hecho)::int, SUM(CAST(cantidad AS INT))
+        FROM seguridad.violencia_intrafamiliar_raw WHERE fecha_hecho IS NOT NULL GROUP BY EXTRACT(YEAR FROM fecha_hecho)::int
+        ORDER BY tipo, anio
+    """
     with engine.connect() as conn:
-        for name, table in types.items():
-            rows = conn.execute(text(f"""
-                SELECT EXTRACT(YEAR FROM fecha_hecho)::int as anio,
-                       SUM(CAST(cantidad AS INT)) as total
-                FROM {table}
-                WHERE fecha_hecho IS NOT NULL
-                GROUP BY anio
-                ORDER BY anio
-            """)).fetchall()
-            for r in rows:
-                all_data.append({"tipo": name, "anio": r[0], "total": r[1]})
+        rows = conn.execute(text(sql)).fetchall()
 
-    return {"data": all_data}
+    return {"data": [{"tipo": r[0], "anio": r[1], "total": r[2]} for r in rows]}
 
 
 @router.get("/education-vs-security")

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useStore } from '../store'
-import { SkeletonTab } from './Skeleton'
+import { SkeletonTab, ErrorBanner } from './Skeleton'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, RadarChart, Radar, PolarGrid,
@@ -17,10 +17,11 @@ const KPI_STYLE = {
 }
 
 export default function GobiernoTab() {
-  const { gobiernoData, fetchGobierno } = useStore()
+  const { gobiernoData, fetchGobierno, errors } = useStore()
 
   useEffect(() => { fetchGobierno() }, [])
 
+  if (errors.gobierno) return <ErrorBanner message={errors.gobierno} />
   if (!gobiernoData) return <SkeletonTab />
 
   const { finanzas, desempeno, digital, pobreza } = gobiernoData
@@ -73,8 +74,8 @@ export default function GobiernoTab() {
     }
     digitalByYear[r.anio].apartado = Math.round(r.puntaje * 10) / 10
     digitalByYear[r.anio].promedio = Math.round(r.promedio_grupo * 10) / 10
-    digitalByYear[r.anio].max = Math.round(r.max_grupo * 10) / 10
-    digitalByYear[r.anio].min = Math.round(r.min_grupo * 10) / 10
+    digitalByYear[r.anio].max = Math.round((r.m_ximo_grupo ?? 0) * 10) / 10
+    digitalByYear[r.anio].min = Math.round((r.m_nimo_grupo ?? 0) * 10) / 10
   })
   const digitalMain = Object.values(digitalByYear).sort((a, b) => a.anio - b.anio)
 

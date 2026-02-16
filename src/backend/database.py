@@ -1,8 +1,14 @@
+import json
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from .config import DATABASE_URL
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+)
 SessionLocal = sessionmaker(bind=engine)
 
 
@@ -14,8 +20,16 @@ def get_db():
         db.close()
 
 
+def query_dicts(sql: str, params: dict = None) -> list[dict]:
+    """Execute SQL once and return list of dicts."""
+    with engine.connect() as conn:
+        result = conn.execute(text(sql), params or {})
+        columns = list(result.keys())
+        return [dict(zip(columns, row)) for row in result.fetchall()]
+
+
 def query_df(sql: str, params: dict = None):
-    """Execute SQL and return list of dicts."""
+    """Execute SQL and return pandas DataFrame."""
     import pandas as pd
     with engine.connect() as conn:
         df = pd.read_sql(text(sql), conn, params=params)
@@ -29,4 +43,4 @@ def query_geojson(sql: str, params: dict = None) -> dict:
         gdf = gpd.read_postgis(text(sql), conn, geom_col="geom", params=params)
     if gdf.empty:
         return {"type": "FeatureCollection", "features": []}
-    return eval(gdf.to_json())
+    return json.loads(gdf.to_json())

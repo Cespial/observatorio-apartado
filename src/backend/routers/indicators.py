@@ -1,8 +1,8 @@
 """
 Endpoints de indicadores socioeconómicos, educativos, seguridad
 """
-from fastapi import APIRouter, Query
-from ..database import engine
+from fastapi import APIRouter, Query, HTTPException
+from ..database import engine, query_dicts
 from sqlalchemy import text
 import json
 
@@ -173,10 +173,7 @@ def get_icfes(
             GROUP BY cole_nombre_establecimiento, periodo
             ORDER BY periodo DESC, prom_global DESC
         """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql), params).fetchall()
-        columns = conn.execute(text(sql), params).keys()
-    return [dict(zip(columns, row)) for row in rows]
+    return query_dicts(sql, params)
 
 
 @router.get("/seguridad/serie")
@@ -192,7 +189,7 @@ def get_seguridad_serie(
     }
     table = table_map.get(tipo)
     if not table:
-        return {"error": f"Tipo '{tipo}' no válido. Opciones: {list(table_map.keys())}"}
+        raise HTTPException(status_code=400, detail=f"Tipo '{tipo}' no válido. Opciones: {list(table_map.keys())}")
 
     sql = f"""
         SELECT EXTRACT(YEAR FROM fecha_hecho)::int as anio,
@@ -290,10 +287,7 @@ def get_establecimientos(
         WHERE {where}
         ORDER BY CAST(total_matricula AS INT) DESC NULLS LAST
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql), params).fetchall()
-        cols = conn.execute(text(sql), params).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql, params)
 
 
 @router.get("/salud/ips")
@@ -306,10 +300,7 @@ def get_ips():
         FROM socioeconomico.ips_raw
         LIMIT 500
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql)
 
 
 # ── Sprint 3 endpoints ──────────────────────────────────────────────
@@ -338,10 +329,7 @@ def get_terridata(
         WHERE {where}
         ORDER BY dimension, indicador, anio
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql), params).fetchall()
-        cols = conn.execute(text(sql), params).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql, params)
 
 
 @router.get("/salud/irca")
@@ -358,10 +346,7 @@ def get_irca():
         FROM socioeconomico.irca_raw
         ORDER BY a_o::int
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql)
 
 
 @router.get("/salud/sivigila")
@@ -384,11 +369,7 @@ def get_sivigila(
         GROUP BY nombre, ano
         ORDER BY ano, casos DESC
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql), params).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    results = [dict(zip(cols, r)) for r in rows]
-    return results
+    return query_dicts(sql, params)
 
 
 @router.get("/salud/sivigila/resumen")
@@ -402,10 +383,7 @@ def get_sivigila_resumen():
         GROUP BY nombre
         ORDER BY total_casos DESC
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql)
 
 
 @router.get("/economia/internet")
@@ -421,10 +399,7 @@ def get_internet():
         GROUP BY anno, segmento
         ORDER BY anno, accesos DESC
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql)
 
 
 @router.get("/economia/internet/serie")
@@ -440,10 +415,7 @@ def get_internet_serie():
         GROUP BY anno
         ORDER BY anno
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql)
 
 
 @router.get("/economia/secop")
@@ -460,32 +432,27 @@ def get_secop_resumen():
         GROUP BY tipo_de_contrato
         ORDER BY contratos DESC
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql)
 
 
 @router.get("/economia/turismo")
 def get_turismo():
     """Establecimientos turisticos RNT."""
-    sql = """
-        SELECT COUNT(*) as total,
-               COUNT(DISTINCT categoria) as categorias
-        FROM servicios.rnt_turismo_raw
-    """
     with engine.connect() as conn:
-        total_row = conn.execute(text(sql)).fetchone()
+        total_row = conn.execute(text("""
+            SELECT COUNT(*) as total,
+                   COUNT(DISTINCT categoria) as categorias
+            FROM servicios.rnt_turismo_raw
+        """)).fetchone()
 
-    sql2 = """
-        SELECT categoria, COUNT(*) as establecimientos
-        FROM servicios.rnt_turismo_raw
-        WHERE categoria IS NOT NULL
-        GROUP BY categoria
-        ORDER BY establecimientos DESC
-    """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql2)).fetchall()
+        rows = conn.execute(text("""
+            SELECT categoria, COUNT(*) as establecimientos
+            FROM servicios.rnt_turismo_raw
+            WHERE categoria IS NOT NULL
+            GROUP BY categoria
+            ORDER BY establecimientos DESC
+        """)).fetchall()
+
     return {
         "total": total_row[0],
         "categorias": total_row[1],
@@ -501,10 +468,7 @@ def get_agricola():
         ORDER BY 1
         LIMIT 200
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql)
 
 
 @router.get("/gobierno/finanzas")
@@ -527,10 +491,7 @@ def get_finanzas():
           AND indicador IN ({placeholders})
         ORDER BY indicador, anio
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql), params).fetchall()
-        cols = conn.execute(text(sql), params).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql, params)
 
 
 @router.get("/gobierno/desempeno")
@@ -543,10 +504,7 @@ def get_desempeno():
         WHERE dimension = 'Medición de desempeño municipal'
         ORDER BY indicador, anio
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql)
 
 
 @router.get("/gobierno/digital")
@@ -556,39 +514,28 @@ def get_gobierno_digital():
         SELECT vigencia::int as anio, ndice as indice,
                puntaje_entidad::float as puntaje,
                promedio_grupo_par::float as promedio_grupo,
-               m_ximo_grupo_par::float as max_grupo,
-               m_nimo_grupo_par::float as min_grupo,
+               m_ximo_grupo_par::float as m_ximo_grupo,
+               m_nimo_grupo_par::float as m_nimo_grupo,
                quintil_grupo_par as quintil,
                percentil_grupo_par as percentil
         FROM socioeconomico.gobierno_digital_raw
         ORDER BY vigencia, ndice
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    return [dict(zip(cols, r)) for r in rows]
+    return query_dicts(sql)
 
 
 @router.get("/gobierno/pobreza")
 def get_pobreza():
     """Indicadores de pobreza (IPM, NBI) de TerriData."""
-    sql = """
+    terridata = query_dicts("""
         SELECT indicador, dato_numerico, anio, unidad_de_medida, fuente
         FROM socioeconomico.terridata
         WHERE dimension = 'Pobreza'
         ORDER BY indicador, anio
-    """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-        cols = conn.execute(text(sql)).keys()
-    results = [dict(zip(cols, r)) for r in rows]
+    """)
 
-    ipm_sql = """
+    ipm = query_dicts("""
         SELECT * FROM socioeconomico.ipm_raw LIMIT 30
-    """
-    with engine.connect() as conn:
-        ipm_rows = conn.execute(text(ipm_sql)).fetchall()
-        ipm_cols = conn.execute(text(ipm_sql)).keys()
-    ipm = [dict(zip(ipm_cols, r)) for r in ipm_rows]
+    """)
 
-    return {"terridata": results, "ipm_detalle": ipm}
+    return {"terridata": terridata, "ipm_detalle": ipm}

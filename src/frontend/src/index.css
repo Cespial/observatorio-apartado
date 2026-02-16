@@ -18,6 +18,7 @@
   --semantic-negative:#F5222D;
   --semantic-warning: #FA8C16;
   --semantic-neutral: #8C8C8C;
+  --semantic-negative-bg: #FFF1F0;
   --chart-1:          #0050B3;
   --chart-2:          #1890FF;
   --chart-3:          #40A9FF;
@@ -43,6 +44,7 @@
   --semantic-negative:#FF6B6B;
   --semantic-warning: #FFB347;
   --semantic-neutral: #8C8C8C;
+  --semantic-negative-bg: #2A1520;
   --chart-1:          #4DA3FF;
   --chart-2:          #69B4FF;
   --chart-3:          #85C5FF;
