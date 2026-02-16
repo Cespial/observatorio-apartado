@@ -1,0 +1,134 @@
+[
+  {
+    "dataset": "limite_municipal",
+    "status": "ok",
+    "registros": 1,
+    "detalle": ""
+  },
+  {
+    "dataset": "osm_edificaciones",
+    "status": "ok",
+    "registros": 3251,
+    "detalle": ""
+  },
+  {
+    "dataset": "osm_vias",
+    "status": "ok",
+    "registros": 1575,
+    "detalle": ""
+  },
+  {
+    "dataset": "osm_uso_suelo",
+    "status": "ok",
+    "registros": 37,
+    "detalle": ""
+  },
+  {
+    "dataset": "osm_amenidades",
+    "status": "ok",
+    "registros": 81,
+    "detalle": ""
+  },
+  {
+    "dataset": "igac_municipios",
+    "status": "error",
+    "registros": 0,
+    "detalle": "Sin datos en bbox"
+  },
+  {
+    "dataset": "manzanas_censales",
+    "status": "ok",
+    "registros": 3672,
+    "detalle": ""
+  },
+  {
+    "dataset": "catastro_terrenos",
+    "status": "error",
+    "registros": 0,
+    "detalle": "Sin terrenos en bbox"
+  },
+  {
+    "dataset": "catastro_construcciones",
+    "status": "error",
+    "registros": 0,
+    "detalle": "Sin construcciones en bbox"
+  },
+  {
+    "dataset": "catastro_sectores",
+    "status": "error",
+    "registros": 0,
+    "detalle": "Sin sectores en bbox"
+  },
+  {
+    "dataset": "catastro_veredas",
+    "status": "error",
+    "registros": 0,
+    "detalle": "Sin veredas en bbox"
+  },
+  {
+    "dataset": "ipm",
+    "status": "ok",
+    "registros": 20,
+    "detalle": "(tabla completa)"
+  },
+  {
+    "dataset": "nbi",
+    "status": "ok",
+    "registros": 1,
+    "detalle": ""
+  },
+  {
+    "dataset": "establecimientos_educativos",
+    "status": "ok",
+    "registros": 320,
+    "detalle": ""
+  },
+  {
+    "dataset": "icfes",
+    "status": "ok",
+    "registros": 14542,
+    "detalle": ""
+  },
+  {
+    "dataset": "ips_salud",
+    "status": "ok",
+    "registros": 236,
+    "detalle": ""
+  },
+  {
+    "dataset": "servicios_publicos",
+    "status": "ok",
+    "registros": 1179,
+    "detalle": ""
+  },
+  {
+    "dataset": "homicidios",
+    "status": "ok",
+    "registros": 1031,
+    "detalle": ""
+  },
+  {
+    "dataset": "hurtos",
+    "status": "ok",
+    "registros": 1183,
+    "detalle": ""
+  },
+  {
+    "dataset": "delitos_sexuales",
+    "status": "ok",
+    "registros": 1244,
+    "detalle": ""
+  },
+  {
+    "dataset": "violencia_intrafamiliar",
+    "status": "ok",
+    "registros": 2554,
+    "detalle": ""
+  },
+  {
+    "dataset": "victimas_conflicto",
+    "status": "ok",
+    "registros": 24703,
+    "detalle": ""
+  }
+]

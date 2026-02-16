@@ -1,0 +1,30 @@
+# Data files (large binary/geospatial datasets)
+data/
+pgdata/
+
+# Frontend
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+
+# Environment & secrets
+.env
+.env.local
+
+# Logs
+*.log
+nohup.out
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

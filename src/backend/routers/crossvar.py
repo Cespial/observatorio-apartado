@@ -1,0 +1,314 @@
+"""
+Motor de Cruces Multivariable — el corazón analítico del observatorio
+Permite cruzar cualquier par de variables y obtener scatter plots, correlaciones,
+mapas bivariados y análisis espaciales.
+"""
+from fastapi import APIRouter, Query
+from ..database import engine
+from sqlalchemy import text
+import json
+
+router = APIRouter(prefix="/api/crossvar", tags=["Cruces Multivariable"])
+
+
+# Variables disponibles para cruce
+VARIABLES = {
+    "poblacion": {
+        "name": "Población por Manzana",
+        "sql": "SELECT cod_dane_manzana as geo_id, CAST(total_personas AS FLOAT) as valor, geom FROM cartografia.manzanas_censales WHERE total_personas ~ '^[0-9]+$'",
+        "unit": "personas",
+        "geo_level": "manzana",
+    },
+    "icfes_global": {
+        "name": "Puntaje ICFES Global (promedio por colegio)",
+        "sql": """
+            SELECT cole_nombre_establecimiento as geo_id,
+                   AVG(CAST(punt_global AS FLOAT)) as valor
+            FROM socioeconomico.icfes_raw
+            WHERE punt_global IS NOT NULL
+            GROUP BY cole_nombre_establecimiento
+        """,
+        "unit": "puntos",
+        "geo_level": "colegio",
+    },
+    "icfes_matematicas": {
+        "name": "Puntaje ICFES Matemáticas (promedio)",
+        "sql": """
+            SELECT cole_nombre_establecimiento as geo_id,
+                   AVG(CAST(punt_matematicas AS FLOAT)) as valor
+            FROM socioeconomico.icfes_raw
+            WHERE punt_matematicas IS NOT NULL
+            GROUP BY cole_nombre_establecimiento
+        """,
+        "unit": "puntos",
+        "geo_level": "colegio",
+    },
+    "icfes_lectura": {
+        "name": "Puntaje ICFES Lectura Crítica (promedio)",
+        "sql": """
+            SELECT cole_nombre_establecimiento as geo_id,
+                   AVG(CAST(punt_lectura_critica AS FLOAT)) as valor
+            FROM socioeconomico.icfes_raw
+            WHERE punt_lectura_critica IS NOT NULL
+            GROUP BY cole_nombre_establecimiento
+        """,
+        "unit": "puntos",
+        "geo_level": "colegio",
+    },
+    "matricula": {
+        "name": "Matrícula Total por Establecimiento",
+        "sql": """
+            SELECT nombre_establecimiento as geo_id,
+                   CAST(total_matricula AS FLOAT) as valor
+            FROM socioeconomico.establecimientos_educativos_raw
+            WHERE total_matricula IS NOT NULL
+        """,
+        "unit": "estudiantes",
+        "geo_level": "colegio",
+    },
+    "homicidios_anual": {
+        "name": "Homicidios por Año",
+        "sql": """
+            SELECT EXTRACT(YEAR FROM fecha_hecho)::text as geo_id,
+                   SUM(CAST(cantidad AS FLOAT)) as valor
+            FROM seguridad.homicidios_raw
+            WHERE fecha_hecho IS NOT NULL
+            GROUP BY EXTRACT(YEAR FROM fecha_hecho)
+        """,
+        "unit": "casos",
+        "geo_level": "anual",
+    },
+    "hurtos_anual": {
+        "name": "Hurtos por Año",
+        "sql": """
+            SELECT EXTRACT(YEAR FROM fecha_hecho)::text as geo_id,
+                   SUM(CAST(cantidad AS FLOAT)) as valor
+            FROM seguridad.hurtos_raw
+            WHERE fecha_hecho IS NOT NULL
+            GROUP BY EXTRACT(YEAR FROM fecha_hecho)
+        """,
+        "unit": "casos",
+        "geo_level": "anual",
+    },
+    "vif_anual": {
+        "name": "Violencia Intrafamiliar por Año",
+        "sql": """
+            SELECT EXTRACT(YEAR FROM fecha_hecho)::text as geo_id,
+                   SUM(CAST(cantidad AS FLOAT)) as valor
+            FROM seguridad.violencia_intrafamiliar_raw
+            WHERE fecha_hecho IS NOT NULL
+            GROUP BY EXTRACT(YEAR FROM fecha_hecho)
+        """,
+        "unit": "casos",
+        "geo_level": "anual",
+    },
+    "delitos_sexuales_anual": {
+        "name": "Delitos Sexuales por Año",
+        "sql": """
+            SELECT EXTRACT(YEAR FROM fecha_hecho)::text as geo_id,
+                   SUM(CAST(cantidad AS FLOAT)) as valor
+            FROM seguridad.delitos_sexuales_raw
+            WHERE fecha_hecho IS NOT NULL
+            GROUP BY EXTRACT(YEAR FROM fecha_hecho)
+        """,
+        "unit": "casos",
+        "geo_level": "anual",
+    },
+    "victimas_hecho": {
+        "name": "Víctimas por Hecho Victimizante",
+        "sql": """
+            SELECT hecho as geo_id,
+                   SUM(CAST(per_ocu AS FLOAT)) as valor
+            FROM seguridad.victimas_raw
+            WHERE per_ocu IS NOT NULL
+            GROUP BY hecho
+        """,
+        "unit": "personas",
+        "geo_level": "hecho",
+    },
+    "places_categoria": {
+        "name": "Negocios por Categoría",
+        "sql": """
+            SELECT category as geo_id,
+                   COUNT(*)::float as valor
+            FROM servicios.google_places
+            GROUP BY category
+        """,
+        "unit": "establecimientos",
+        "geo_level": "categoria",
+    },
+    "places_rating": {
+        "name": "Rating Promedio de Negocios por Categoría",
+        "sql": """
+            SELECT category as geo_id,
+                   AVG(rating) as valor
+            FROM servicios.google_places
+            WHERE rating IS NOT NULL
+            GROUP BY category
+        """,
+        "unit": "estrellas (1-5)",
+        "geo_level": "categoria",
+    },
+}
+
+
+@router.get("/variables")
+def list_variables():
+    """Listar todas las variables disponibles para cruces."""
+    return [
+        {"id": k, "name": v["name"], "unit": v["unit"], "geo_level": v["geo_level"]}
+        for k, v in VARIABLES.items()
+    ]
+
+
+@router.get("/scatter")
+def scatter_analysis(
+    var_x: str = Query(..., description="Variable eje X"),
+    var_y: str = Query(..., description="Variable eje Y"),
+):
+    """
+    Cruce scatter plot entre dos variables.
+    Retorna puntos (x, y) con labels, coeficiente de correlación y línea de regresión.
+    """
+    if var_x not in VARIABLES:
+        return {"error": f"Variable '{var_x}' no existe. Usa /api/crossvar/variables"}
+    if var_y not in VARIABLES:
+        return {"error": f"Variable '{var_y}' no existe. Usa /api/crossvar/variables"}
+
+    vx = VARIABLES[var_x]
+    vy = VARIABLES[var_y]
+
+    # Get data for both variables
+    with engine.connect() as conn:
+        rows_x = conn.execute(text(vx["sql"])).fetchall()
+        rows_y = conn.execute(text(vy["sql"])).fetchall()
+
+    # Create dictionaries for join
+    dict_x = {str(r[0]): float(r[1]) for r in rows_x if r[1] is not None}
+    dict_y = {str(r[0]): float(r[1]) for r in rows_y if r[1] is not None}
+
+    # Join on geo_id
+    common_keys = set(dict_x.keys()) & set(dict_y.keys())
+    points = [
+        {"label": k, "x": dict_x[k], "y": dict_y[k]}
+        for k in common_keys
+    ]
+
+    # Calculate correlation
+    correlation = None
+    regression = None
+    if len(points) >= 3:
+        import numpy as np
+        xs = np.array([p["x"] for p in points])
+        ys = np.array([p["y"] for p in points])
+        if xs.std() > 0 and ys.std() > 0:
+            correlation = float(np.corrcoef(xs, ys)[0, 1])
+            # Linear regression
+            slope, intercept = np.polyfit(xs, ys, 1)
+            regression = {
+                "slope": float(slope),
+                "intercept": float(intercept),
+                "r_squared": float(correlation ** 2),
+            }
+
+    return {
+        "var_x": {"id": var_x, "name": vx["name"], "unit": vx["unit"]},
+        "var_y": {"id": var_y, "name": vy["name"], "unit": vy["unit"]},
+        "points": points,
+        "n": len(points),
+        "correlation": correlation,
+        "regression": regression,
+    }
+
+
+@router.get("/timeseries")
+def timeseries_comparison(
+    variables: str = Query(
+        "homicidios_anual,hurtos_anual,vif_anual",
+        description="Variables separadas por coma (deben ser de nivel anual)",
+    ),
+):
+    """
+    Comparación de múltiples series temporales en un solo gráfico.
+    """
+    var_list = [v.strip() for v in variables.split(",")]
+    series = {}
+
+    for var_id in var_list:
+        if var_id not in VARIABLES:
+            continue
+        v = VARIABLES[var_id]
+        if v["geo_level"] != "anual":
+            continue
+        with engine.connect() as conn:
+            rows = conn.execute(text(v["sql"])).fetchall()
+        series[var_id] = {
+            "name": v["name"],
+            "unit": v["unit"],
+            "data": [{"year": int(float(r[0])), "value": float(r[1])} for r in rows if r[0] and r[1]],
+        }
+        series[var_id]["data"].sort(key=lambda x: x["year"])
+
+    return {"series": series}
+
+
+@router.get("/security-matrix")
+def security_matrix():
+    """
+    Matriz completa de seguridad: todos los tipos de delito por año.
+    Ideal para gráficos de área apilada o heatmaps temporales.
+    """
+    types = {
+        "Homicidios": "seguridad.homicidios_raw",
+        "Hurtos": "seguridad.hurtos_raw",
+        "Delitos Sexuales": "seguridad.delitos_sexuales_raw",
+        "Violencia Intrafamiliar": "seguridad.violencia_intrafamiliar_raw",
+    }
+
+    all_data = []
+    with engine.connect() as conn:
+        for name, table in types.items():
+            rows = conn.execute(text(f"""
+                SELECT EXTRACT(YEAR FROM fecha_hecho)::int as anio,
+                       SUM(CAST(cantidad AS INT)) as total
+                FROM {table}
+                WHERE fecha_hecho IS NOT NULL
+                GROUP BY anio
+                ORDER BY anio
+            """)).fetchall()
+            for r in rows:
+                all_data.append({"tipo": name, "anio": r[0], "total": r[1]})
+
+    return {"data": all_data}
+
+
+@router.get("/education-vs-security")
+def education_vs_security():
+    """
+    Cruce especial: evolución de puntajes ICFES vs indicadores de seguridad por año.
+    """
+    with engine.connect() as conn:
+        # ICFES by year
+        icfes = conn.execute(text("""
+            SELECT SUBSTRING(periodo, 1, 4)::int as anio,
+                   AVG(CAST(punt_global AS FLOAT)) as prom_global,
+                   COUNT(*) as estudiantes
+            FROM socioeconomico.icfes_raw
+            WHERE punt_global IS NOT NULL
+            GROUP BY SUBSTRING(periodo, 1, 4)
+            ORDER BY anio
+        """)).fetchall()
+
+        # Homicidios by year
+        homicidios = conn.execute(text("""
+            SELECT EXTRACT(YEAR FROM fecha_hecho)::int as anio,
+                   SUM(CAST(cantidad AS INT)) as total
+            FROM seguridad.homicidios_raw
+            WHERE fecha_hecho IS NOT NULL
+            GROUP BY anio ORDER BY anio
+        """)).fetchall()
+
+    return {
+        "icfes": [{"anio": r[0], "prom_global": float(r[1]), "estudiantes": r[2]} for r in icfes],
+        "homicidios": [{"anio": r[0], "total": r[1]} for r in homicidios],
+    }

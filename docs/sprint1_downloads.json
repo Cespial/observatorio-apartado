@@ -1,0 +1,364 @@
+{
+  "report_date": "2026-02-15",
+  "municipality": "Apartado",
+  "dane_code": "05045",
+  "department": "Antioquia",
+  "department_code": "05",
+  "total_datasets_downloaded": 35,
+  "new_datasets_this_session": 28,
+  "previously_downloaded": 7,
+  "datasets_not_found": 9,
+  "total_records_new": 67431,
+  "total_records_previous": 21110,
+  "total_records_all": 88541,
+  "categories_covered": {
+    "demografia": 0,
+    "educacion": 3,
+    "salud": 6,
+    "economia": 3,
+    "seguridad": 14,
+    "infraestructura": 1,
+    "gobierno": 8,
+    "cultura": 2,
+    "ambiente": 0,
+    "riesgo": 1
+  },
+  "datasets": {
+    "downloaded_new": [
+      {
+        "name": "IRCA Calidad del Agua",
+        "dataset_id": "nxt2-39c3",
+        "category": "salud",
+        "file": "salud/irca_calidad_agua.json",
+        "records": 18,
+        "filter": "municipiocodigo='05045'",
+        "status": "success"
+      },
+      {
+        "name": "SIVIGILA Eventos Salud Publica 2017",
+        "dataset_id": "84d4-vfax",
+        "category": "salud",
+        "file": "salud/sivigila_2017.json",
+        "records": 790,
+        "filter": "upper(nom_mun) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "SIVIGILA Eventos Salud Publica 2018",
+        "dataset_id": "xd2n-cu8j",
+        "category": "salud",
+        "file": "salud/sivigila_2018.json",
+        "records": 850,
+        "filter": "upper(nom_mun) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "SIVIGILA Eventos Salud Publica 2019",
+        "dataset_id": "qvnt-2igj",
+        "category": "salud",
+        "file": "salud/sivigila_2019.json",
+        "records": 801,
+        "filter": "upper(nom_mun) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "SIVIGILA Eventos Consolidado (2017-2019)",
+        "dataset_id": "merged",
+        "category": "salud",
+        "file": "salud/sivigila_eventos.json",
+        "records": 2441,
+        "filter": "merged from 3 years",
+        "status": "success"
+      },
+      {
+        "name": "EVA Agricola 2019-2024",
+        "dataset_id": "uejq-wxrr",
+        "category": "economia",
+        "file": "economia/eva_agricola.json",
+        "records": 86,
+        "filter": "c_digo_dane_municipio='05045'",
+        "status": "success"
+      },
+      {
+        "name": "EVA Agricola Historico",
+        "dataset_id": "2pnw-mmge",
+        "category": "economia",
+        "file": "economia/eva_agricola_historico.json",
+        "records": 162,
+        "filter": "c_d_mun='05045'",
+        "status": "success"
+      },
+      {
+        "name": "SECOP Integrado (Contratos)",
+        "dataset_id": "rpmr-utcd",
+        "category": "economia",
+        "file": "economia/secop_integrado.json",
+        "records": 25584,
+        "filter": "upper(municipio_entidad) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "Lesiones Personales (Policia Nacional)",
+        "dataset_id": "72sg-cybi",
+        "category": "seguridad",
+        "file": "seguridad/lesiones_personales.json",
+        "records": 3653,
+        "filter": "codigo_dane='05045000'",
+        "status": "success"
+      },
+      {
+        "name": "Minas Antipersonal - Victimas",
+        "dataset_id": "yhxn-eqqw",
+        "category": "seguridad",
+        "file": "seguridad/minas_antipersonal_victimas.json",
+        "records": 45,
+        "filter": "codigodanemunicipio='05045'",
+        "status": "success"
+      },
+      {
+        "name": "Minas Antipersonal - Eventos",
+        "dataset_id": "sgp4-3e6k",
+        "category": "seguridad",
+        "file": "seguridad/minas_antipersonal_eventos.json",
+        "records": 125,
+        "filter": "codigo_dane_municipio='05045'",
+        "status": "success"
+      },
+      {
+        "name": "SIEVCAC Minas Antipersonal Victimas (Conflicto)",
+        "dataset_id": "52eu-ic7d",
+        "category": "seguridad",
+        "file": "seguridad/sievcac_minas_victimas.json",
+        "records": 53,
+        "filter": "upper(municipio) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "SIEVCAC Masacres (Conflicto Armado)",
+        "dataset_id": "d78j-f66e",
+        "category": "seguridad",
+        "file": "seguridad/sievcac_masacres.json",
+        "records": 70,
+        "filter": "upper(municipio) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "Sectores Criticos Siniestralidad Vial",
+        "dataset_id": "rs3u-8r4q",
+        "category": "seguridad",
+        "file": "seguridad/siniestros_viales_criticos.json",
+        "records": 3,
+        "filter": "upper(municipio) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "Vehiculos Accidentes Transito (Ley 2251)",
+        "dataset_id": "6jmc-vaxk",
+        "category": "seguridad",
+        "file": "seguridad/accidentes_transito_vehiculos.json",
+        "records": 1126,
+        "filter": "upper(municipio_accidente) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "Internet Fijo Accesos",
+        "dataset_id": "n48w-gutb",
+        "category": "infraestructura",
+        "file": "infraestructura/internet_fijo.json",
+        "records": 9310,
+        "filter": "cod_municipio='05045'",
+        "status": "success"
+      },
+      {
+        "name": "Sedes Educativas Geolocalizadas (MEN)",
+        "dataset_id": "x5ay-984n",
+        "category": "educacion",
+        "file": "educacion/sedes_educativas_geo.json",
+        "records": 75,
+        "filter": "cod_dane_municipio='05045'",
+        "status": "success"
+      },
+      {
+        "name": "Indice de Gobierno Digital - Historico",
+        "dataset_id": "rtai-k9uh",
+        "category": "gobierno",
+        "file": "gobierno/indice_gobierno_digital.json",
+        "records": 84,
+        "filter": "id_municipio='05045'",
+        "status": "success"
+      },
+      {
+        "name": "Familias en Accion (Beneficiarios)",
+        "dataset_id": "xfif-myr2",
+        "category": "gobierno",
+        "file": "gobierno/familias_en_accion.json",
+        "records": 18345,
+        "filter": "codigomunicipioatencion='05045'",
+        "status": "success"
+      },
+      {
+        "name": "ICBF Prevencion (Beneficiarios)",
+        "dataset_id": "g58z-k6f6",
+        "category": "gobierno",
+        "file": "gobierno/icbf_prevencion.json",
+        "records": 2099,
+        "filter": "codigo_municipio_atenci_n='05045'",
+        "status": "success"
+      },
+      {
+        "name": "ICBF Primera Infancia (Beneficiarios)",
+        "dataset_id": "5akr-u7t8",
+        "category": "gobierno",
+        "file": "gobierno/icbf_primera_infancia.json",
+        "records": 801,
+        "filter": "codigo_municipio_uds='05045'",
+        "status": "success"
+      },
+      {
+        "name": "Colombia Mayor (Pago Directo)",
+        "dataset_id": "7tfe-kjaw",
+        "category": "gobierno",
+        "file": "gobierno/colombia_mayor_directo.json",
+        "records": 2,
+        "filter": "upper(municipio_distrito) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "UNGRD Emergencias (2019-2024 merged)",
+        "dataset_id": "multiple",
+        "category": "gobierno",
+        "file": "gobierno/ungrd_emergencias.json",
+        "records": 32,
+        "filter": "divipola starts with '05045'",
+        "status": "success"
+      },
+      {
+        "name": "Puestos de Votacion Elecciones 2023",
+        "dataset_id": "mv2e-prx5",
+        "category": "gobierno",
+        "file": "gobierno/puestos_votacion_2023.json",
+        "records": 27,
+        "filter": "upper(municipio) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "Programas de Gobierno Elegidos",
+        "dataset_id": "h236-q58p",
+        "category": "gobierno",
+        "file": "gobierno/programas_gobierno_elegidos.json",
+        "records": 2,
+        "filter": "upper(municipio) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "Consejeros Municipales de Juventud",
+        "dataset_id": "wk45-pgw8",
+        "category": "gobierno",
+        "file": "gobierno/consejeros_juventud.json",
+        "records": 6,
+        "filter": "upper(municipio) like '%APARTAD%'",
+        "status": "success"
+      },
+      {
+        "name": "Espacios de Artes, Culturas y Saberes",
+        "dataset_id": "te39-v28f",
+        "category": "cultura",
+        "file": "cultura/espacios_culturales.json",
+        "records": 25,
+        "filter": "divipola='05045'",
+        "status": "success"
+      },
+      {
+        "name": "Registro Nacional de Turismo (RNT)",
+        "dataset_id": "thwd-ivmp",
+        "category": "cultura",
+        "file": "cultura/rnt_turismo.json",
+        "records": 816,
+        "filter": "cod_mun='05045'",
+        "status": "success"
+      }
+    ],
+    "previously_downloaded": [
+      {
+        "name": "Homicidios",
+        "dataset_id": "m8fd-ahd9",
+        "records": 1031,
+        "file": "seguridad/homicidios_apartado.json"
+      },
+      {
+        "name": "Hurtos",
+        "dataset_id": "9vha-vh9n",
+        "records": 1183,
+        "file": "seguridad/hurtos_apartado.json"
+      },
+      {
+        "name": "Delitos Sexuales",
+        "dataset_id": "fpe5-yrmw",
+        "records": 1244,
+        "file": "seguridad/delitos_sexuales_apartado.json"
+      },
+      {
+        "name": "VIF",
+        "dataset_id": "vuyt-mqpw",
+        "records": 2554,
+        "file": "seguridad/violencia_intrafamiliar_apartado.json"
+      },
+      {
+        "name": "ICFES",
+        "dataset_id": "various",
+        "records": 14542,
+        "file": "educacion/icfes_apartado.json"
+      },
+      {
+        "name": "IPS",
+        "dataset_id": "c36g-9fc2",
+        "records": 236,
+        "file": "salud/ips_apartado.json"
+      },
+      {
+        "name": "Establecimientos Educativos",
+        "dataset_id": "various",
+        "records": 320,
+        "file": "educacion/establecimientos_apartado.json"
+      }
+    ],
+    "not_found": [
+      {
+        "name": "Nacimientos (RUAF/DANE)",
+        "reason": "No national-level nacimientos dataset on datos.gov.co with municipal filtering; datasets found are municipality-specific (Bucaramanga, Putumayo, Caldas)"
+      },
+      {
+        "name": "Defunciones (RUAF)",
+        "reason": "No national-level defunciones dataset; existing datasets are department-specific (Santander, Nariño, Valle del Cauca, Envigado)"
+      },
+      {
+        "name": "Migrantes Venezolanos por municipio",
+        "reason": "Pre-registro dataset (6eyy-q57b) only has departamento-level disaggregation, no municipio column"
+      },
+      {
+        "name": "Vacunacion PAI por municipio",
+        "reason": "PAI datasets found are department-specific (Valle del Cauca, Norte de Santander); no national dataset with municipal breakdown"
+      },
+      {
+        "name": "Extorsion (Policia Nacional)",
+        "reason": "Dataset jq9i-pe24 is department-specific (Valle del Cauca only)"
+      },
+      {
+        "name": "Resultados Electorales detallados",
+        "reason": "Detailed voting results datasets on datos.gov.co are municipality-specific (Sabaneta); no national results dataset found"
+      },
+      {
+        "name": "Escenarios Deportivos",
+        "reason": "Datasets are municipality-specific (Acacias, Dosquebradas, Medellin); no national inventory found"
+      },
+      {
+        "name": "Puntos Vive Digital nacional",
+        "reason": "Datasets are municipality-specific; only found PVD Valle del Cauca and individual municipal datasets"
+      },
+      {
+        "name": "IGA (Indice Gobierno Abierto PGN)",
+        "reason": "Only found Indice de Gobierno Digital (downloaded as substitute); IGA from PGN not available on datos.gov.co"
+      }
+    ]
+  }
+}

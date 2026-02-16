@@ -1,0 +1,405 @@
+{
+  "generated": "2026-02-15T22:57:32.846505+00:00",
+  "municipality": "Apartado (05045)",
+  "total_tables": 55,
+  "total_records": 123270,
+  "dimensions": {
+    "cartografia": {
+      "tables": [
+        {
+          "name": "cartografia.igac_municipios",
+          "records": 1
+        },
+        {
+          "name": "cartografia.igac_uraba",
+          "records": 8
+        },
+        {
+          "name": "cartografia.limite_municipal",
+          "records": 1
+        },
+        {
+          "name": "cartografia.manzanas_censales",
+          "records": 3672
+        },
+        {
+          "name": "cartografia.osm_amenidades",
+          "records": 81
+        },
+        {
+          "name": "cartografia.osm_edificaciones",
+          "records": 3251
+        },
+        {
+          "name": "cartografia.osm_uso_suelo",
+          "records": 37
+        },
+        {
+          "name": "cartografia.osm_vias",
+          "records": 1575
+        }
+      ],
+      "total_records": 8626
+    },
+    "seguridad": {
+      "tables": [
+        {
+          "name": "seguridad.accidentes_transito_raw",
+          "records": 1126
+        },
+        {
+          "name": "seguridad.delitos_sexuales",
+          "records": 0
+        },
+        {
+          "name": "seguridad.delitos_sexuales_raw",
+          "records": 1244
+        },
+        {
+          "name": "seguridad.homicidios",
+          "records": 0
+        },
+        {
+          "name": "seguridad.homicidios_raw",
+          "records": 1031
+        },
+        {
+          "name": "seguridad.hurtos",
+          "records": 0
+        },
+        {
+          "name": "seguridad.hurtos_raw",
+          "records": 1183
+        },
+        {
+          "name": "seguridad.lesiones_personales_raw",
+          "records": 3653
+        },
+        {
+          "name": "seguridad.masacres_raw",
+          "records": 70
+        },
+        {
+          "name": "seguridad.minas_antipersonal_raw",
+          "records": 125
+        },
+        {
+          "name": "seguridad.minas_victimas_raw",
+          "records": 45
+        },
+        {
+          "name": "seguridad.sievcac_minas_raw",
+          "records": 53
+        },
+        {
+          "name": "seguridad.siniestros_viales_raw",
+          "records": 3
+        },
+        {
+          "name": "seguridad.victimas_conflicto",
+          "records": 0
+        },
+        {
+          "name": "seguridad.victimas_raw",
+          "records": 24703
+        },
+        {
+          "name": "seguridad.violencia_intrafamiliar",
+          "records": 0
+        },
+        {
+          "name": "seguridad.violencia_intrafamiliar_raw",
+          "records": 2554
+        }
+      ],
+      "total_records": 35790
+    },
+    "servicios": {
+      "tables": [
+        {
+          "name": "servicios.espacios_culturales_raw",
+          "records": 25
+        },
+        {
+          "name": "servicios.google_places",
+          "records": 877
+        },
+        {
+          "name": "servicios.internet_fijo_raw",
+          "records": 9310
+        },
+        {
+          "name": "servicios.prestadores_raw",
+          "records": 1179
+        },
+        {
+          "name": "servicios.rnt_turismo_raw",
+          "records": 816
+        },
+        {
+          "name": "servicios.secop_raw",
+          "records": 25584
+        }
+      ],
+      "total_records": 37791
+    },
+    "socioeconomico": {
+      "tables": [
+        {
+          "name": "socioeconomico.colombia_mayor_raw",
+          "records": 2
+        },
+        {
+          "name": "socioeconomico.establecimientos_educativos",
+          "records": 0
+        },
+        {
+          "name": "socioeconomico.establecimientos_educativos_raw",
+          "records": 320
+        },
+        {
+          "name": "socioeconomico.eva_agricola_historico_raw",
+          "records": 162
+        },
+        {
+          "name": "socioeconomico.eva_agricola_raw",
+          "records": 86
+        },
+        {
+          "name": "socioeconomico.familias_en_accion_raw",
+          "records": 18345
+        },
+        {
+          "name": "socioeconomico.gobierno_digital_raw",
+          "records": 84
+        },
+        {
+          "name": "socioeconomico.icbf_prevencion_raw",
+          "records": 2099
+        },
+        {
+          "name": "socioeconomico.icbf_primera_infancia_raw",
+          "records": 801
+        },
+        {
+          "name": "socioeconomico.icfes",
+          "records": 0
+        },
+        {
+          "name": "socioeconomico.icfes_raw",
+          "records": 14542
+        },
+        {
+          "name": "socioeconomico.ipm",
+          "records": 0
+        },
+        {
+          "name": "socioeconomico.ipm_raw",
+          "records": 20
+        },
+        {
+          "name": "socioeconomico.ips_raw",
+          "records": 236
+        },
+        {
+          "name": "socioeconomico.ips_salud",
+          "records": 0
+        },
+        {
+          "name": "socioeconomico.irca_raw",
+          "records": 18
+        },
+        {
+          "name": "socioeconomico.nbi",
+          "records": 0
+        },
+        {
+          "name": "socioeconomico.nbi_raw",
+          "records": 1
+        },
+        {
+          "name": "socioeconomico.prestadores_servicios",
+          "records": 0
+        },
+        {
+          "name": "socioeconomico.puestos_votacion_raw",
+          "records": 27
+        },
+        {
+          "name": "socioeconomico.sedes_educativas_geo_raw",
+          "records": 75
+        },
+        {
+          "name": "socioeconomico.sivigila_raw",
+          "records": 2441
+        },
+        {
+          "name": "socioeconomico.terridata",
+          "records": 1781
+        },
+        {
+          "name": "socioeconomico.ungrd_emergencias_raw",
+          "records": 23
+        }
+      ],
+      "total_records": 41063
+    }
+  },
+  "data_dictionary_coverage": {
+    "demografia": {
+      "description": "Poblacion y proyecciones demograficas",
+      "available": [
+        "socioeconomico.terridata"
+      ],
+      "missing": [
+        "(pendiente) proyecciones_dane",
+        "(pendiente) censo_basico"
+      ],
+      "coverage_pct": 100.0
+    },
+    "educacion": {
+      "description": "Calidad educativa, cobertura, infraestructura",
+      "available": [
+        "socioeconomico.icfes_raw",
+        "socioeconomico.establecimientos_educativos_raw",
+        "socioeconomico.sedes_educativas_geo_raw"
+      ],
+      "missing": [
+        "(pendiente) matriculas_simat",
+        "(pendiente) desercion_escolar"
+      ],
+      "coverage_pct": 100.0
+    },
+    "salud": {
+      "description": "Prestadores de salud, vigilancia epidemiologica, calidad del agua",
+      "available": [
+        "socioeconomico.ips_raw",
+        "servicios.prestadores_raw",
+        "socioeconomico.irca_raw",
+        "socioeconomico.sivigila_raw"
+      ],
+      "missing": [
+        "(pendiente) mortalidad_infantil",
+        "(pendiente) cobertura_vacunacion"
+      ],
+      "coverage_pct": 100.0
+    },
+    "seguridad": {
+      "description": "Delincuencia, conflicto armado, siniestralidad vial",
+      "available": [
+        "seguridad.homicidios_raw",
+        "seguridad.hurtos_raw",
+        "seguridad.delitos_sexuales_raw",
+        "seguridad.violencia_intrafamiliar_raw",
+        "seguridad.victimas_raw",
+        "seguridad.lesiones_personales_raw",
+        "seguridad.accidentes_transito_raw",
+        "seguridad.minas_antipersonal_raw",
+        "seguridad.minas_victimas_raw",
+        "seguridad.masacres_raw",
+        "seguridad.sievcac_minas_raw",
+        "seguridad.siniestros_viales_raw"
+      ],
+      "missing": [
+        "(pendiente) extorsion",
+        "(pendiente) secuestro"
+      ],
+      "coverage_pct": 100.0
+    },
+    "economia": {
+      "description": "Produccion agricola, contratacion publica, empleo",
+      "available": [
+        "socioeconomico.eva_agricola_raw",
+        "socioeconomico.eva_agricola_historico_raw",
+        "servicios.secop_raw"
+      ],
+      "missing": [
+        "(pendiente) empleo_dane",
+        "(pendiente) pib_municipal",
+        "(pendiente) catastro"
+      ],
+      "coverage_pct": 100.0
+    },
+    "pobreza": {
+      "description": "IPM, NBI, programas sociales",
+      "available": [
+        "socioeconomico.ipm_raw",
+        "socioeconomico.nbi_raw",
+        "socioeconomico.familias_en_accion_raw",
+        "socioeconomico.colombia_mayor_raw"
+      ],
+      "missing": [
+        "(pendiente) gini_municipal"
+      ],
+      "coverage_pct": 100.0
+    },
+    "infancia_y_familia": {
+      "description": "Proteccion de primera infancia, prevencion",
+      "available": [
+        "socioeconomico.icbf_prevencion_raw",
+        "socioeconomico.icbf_primera_infancia_raw"
+      ],
+      "missing": [
+        "(pendiente) adopciones",
+        "(pendiente) trabajo_infantil"
+      ],
+      "coverage_pct": 100.0
+    },
+    "infraestructura_y_servicios": {
+      "description": "Conectividad, servicios publicos, vias",
+      "available": [
+        "servicios.internet_fijo_raw",
+        "servicios.google_places",
+        "cartografia.osm_vias",
+        "cartografia.osm_edificaciones"
+      ],
+      "missing": [
+        "(pendiente) acueducto_cobertura",
+        "(pendiente) alcantarillado_cobertura",
+        "(pendiente) energia_cobertura"
+      ],
+      "coverage_pct": 100.0
+    },
+    "gobierno_y_participacion": {
+      "description": "Gobierno digital, emergencias, participacion ciudadana",
+      "available": [
+        "socioeconomico.gobierno_digital_raw",
+        "socioeconomico.ungrd_emergencias_raw",
+        "socioeconomico.puestos_votacion_raw"
+      ],
+      "missing": [
+        "(pendiente) presupuesto_municipal",
+        "(pendiente) plan_desarrollo"
+      ],
+      "coverage_pct": 100.0
+    },
+    "territorio_y_ambiente": {
+      "description": "Uso del suelo, areas protegidas, cartografia base",
+      "available": [
+        "cartografia.limite_municipal",
+        "cartografia.manzanas_censales",
+        "cartografia.osm_uso_suelo",
+        "cartografia.osm_amenidades",
+        "cartografia.igac_municipios"
+      ],
+      "missing": [
+        "(pendiente) deforestacion",
+        "(pendiente) coberturas_ideam",
+        "(pendiente) riesgos_pot"
+      ],
+      "coverage_pct": 100.0
+    },
+    "cultura_y_turismo": {
+      "description": "Turismo, espacios culturales, patrimonio",
+      "available": [
+        "servicios.rnt_turismo_raw",
+        "servicios.espacios_culturales_raw"
+      ],
+      "missing": [
+        "(pendiente) patrimonio_cultural",
+        "(pendiente) bibliotecas"
+      ],
+      "coverage_pct": 100.0
+    }
+  }
+}
