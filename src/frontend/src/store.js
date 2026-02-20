@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { FlyToInterpolator } from '@deck.gl/core'
 
 const API = '/api'
 
@@ -49,6 +50,64 @@ export const useStore = create((set, get) => ({
   },
   setViewState: (vs) => set({ viewState: vs }),
 
+  selectedMunicipio: 'Apartadó',
+  municipios: [
+    { name: 'Apartadó', lat: 7.8833, lon: -76.6258, zoom: 13, divipola: '05045' },
+    { name: 'Turbo', lat: 8.0933, lon: -76.7297, zoom: 12, divipola: '05837' },
+    { name: 'Carepa', lat: 7.7583, lon: -76.6583, zoom: 13, divipola: '05147' },
+    { name: 'Chigorodó', lat: 7.6667, lon: -76.6833, zoom: 13, divipola: '05172' },
+    { name: 'Necoclí', lat: 8.4233, lon: -76.7858, zoom: 13, divipola: '05490' },
+    { name: 'San Pedro de Urabá', lat: 8.2753, lon: -76.3764, zoom: 13, divipola: '05665' },
+    { name: 'San Juan de Urabá', lat: 8.7592, lon: -76.5297, zoom: 13, divipola: '05659' },
+    { name: 'Arboletes', lat: 8.8503, lon: -76.4269, zoom: 13, divipola: '05051' },
+    { name: 'Mutatá', lat: 7.2453, lon: -76.4358, zoom: 13, divipola: '05480' },
+    { name: 'Urabá (Regional)', lat: 8.2, lon: -76.6, zoom: 8.5, divipola: 'REGIONAL' },
+  ],
+
+  setSelectedMunicipio: (name) => {
+    const mun = get().municipios.find(m => m.name === name)
+    if (mun) {
+      set({
+        selectedMunicipio: name,
+        activePanel: name === 'Urabá (Regional)' ? 'comparative' : 'overview',
+        viewState: {
+          ...get().viewState,
+          latitude: mun.lat,
+          longitude: mun.lon,
+          zoom: mun.zoom,
+          pitch: name === 'Urabá (Regional)' ? 0 : 45,
+          bearing: name === 'Urabá (Regional)' ? 0 : -15,
+          transitionDuration: 2000,
+          transitionInterpolator: new FlyToInterpolator(),
+        }
+      })
+      
+      // Trigger refetch of geo layers for the new context
+      const { fetchManzanas, fetchPlaces, fetchLayerGeoJSON, activeLayers } = get()
+      
+      // Clear current layer data to avoid mixing (optional, or just overwrite)
+      set((s) => ({ layerData: {} }))
+
+      // Re-fetch standard layers
+      fetchManzanas()
+      fetchPlaces()
+      
+      // Re-fetch any other active layers
+      activeLayers.forEach(id => {
+        if (id !== 'manzanas_censales' && id !== 'google_places' && id !== 'places_heatmap') {
+           fetchLayerGeoJSON(id)
+        }
+      })
+
+      // If it's a specific municipality, we could try to fetch its summary
+      if (name === 'Apartadó') {
+        get().fetchSummary()
+      } else {
+        set({ summary: null })
+      }
+    }
+  },
+
   activeLayers: ['limite_municipal', 'osm_vias', 'google_places'],
   toggleLayer: (id) => set((s) => ({
     activeLayers: s.activeLayers.includes(id)
@@ -83,28 +142,40 @@ export const useStore = create((set, get) => ({
     }
   },
   fetchLayerGeoJSON: async (id) => {
-    if (get().layerData[id]) return
+    // We don't cache locally by ID anymore because the content depends on the selected municipality
+    // or we need to include the municipio in the cache key. For simplicity, we just fetch.
+    const municipio = get().selectedMunicipio
+    const mun = get().municipios.find(m => m.name === municipio)
+    const daneParam = mun && mun.divipola !== 'REGIONAL' ? `?dane_code=${mun.divipola}` : ''
+    
     try {
-      const d = await safeFetch(`${API}/layers/${id}/geojson`)
+      const d = await safeFetch(`${API}/layers/${id}/geojson${daneParam}`)
       set((s) => ({ layerData: { ...s.layerData, [id]: d } }))
     } catch (e) {
       console.error(`fetchLayer(${id}):`, e)
     }
   },
   fetchManzanas: async () => {
-    if (get().layerData.manzanas) return
+    // Always re-fetch when called, to match selected municipality
+    const municipio = get().selectedMunicipio
+    const mun = get().municipios.find(m => m.name === municipio)
+    const daneParam = mun && mun.divipola !== 'REGIONAL' ? `&dane_code=${mun.divipola}` : ''
+
     try {
-      const d = await safeFetch(`${API}/geo/manzanas?limit=5000`)
+      const d = await safeFetch(`${API}/geo/manzanas?limit=5000${daneParam}`)
       set((s) => ({ layerData: { ...s.layerData, manzanas: d } }))
     } catch (e) {
       console.error('fetchManzanas:', e)
     }
   },
   fetchPlaces: async () => {
-    if (get().layerData.places) return
+    const municipio = get().selectedMunicipio
+    const mun = get().municipios.find(m => m.name === municipio)
+    const daneParam = mun && mun.divipola !== 'REGIONAL' ? `&dane_code=${mun.divipola}` : ''
+
     try {
       const [pData, cData] = await Promise.all([
-        safeFetch(`${API}/geo/places?limit=2000`),
+        safeFetch(`${API}/geo/places?limit=2000${daneParam}`),
         safeFetch(`${API}/geo/places/categories`),
       ])
       set((s) => ({

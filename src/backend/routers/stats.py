@@ -5,81 +5,69 @@ from fastapi import APIRouter
 from ..database import engine, cached
 from sqlalchemy import text
 
+from fastapi import Query
+
 router = APIRouter(prefix="/api/stats", tags=["Resumen"])
 
+MUNICIPIOS = {
+    "05045": "Apartadó",
+    "05837": "Turbo",
+    "05147": "Carepa",
+    "05172": "Chigorodó",
+    "05490": "Necoclí",
+    "05480": "Mutatá",
+}
 
 @router.get("/summary")
 @cached(ttl_seconds=600)
-def get_summary():
+def get_summary(
+    dane_code: str = Query(None, description="Filtrar por código DANE del municipio")
+):
     """
-    Resumen ejecutivo de Apartadó — tarjetas principales del dashboard.
+    Resumen ejecutivo regional o por municipio.
     """
     stats = {
-        "municipio": "Apartadó",
-        "divipola": "05045",
-        "departamento": "Antioquia",
         "region": "Urabá",
+        "municipio": MUNICIPIOS.get(dane_code, "Toda la Región"),
+        "dane_code": dane_code,
     }
 
+    where_manzanas = "WHERE cod_dane_municipio = :dane" if dane_code else ""
+    where_terridata = "WHERE codigo_municipio = :dane" if dane_code else ""
+    where_icfes = "WHERE cole_cod_mcpio_ubicacion = :dane" if dane_code else ""
+    where_seguridad = "WHERE codigo_dane = :dane" if dane_code else ""
+    where_edu = "WHERE codigo_dane LIKE :dane_prefix" if dane_code else ""
+    
+    params = {"dane": dane_code, "dane_prefix": f"{dane_code}%"} if dane_code else {}
+
     with engine.connect() as conn:
-        # Población (manzanas censales)
-        pop_row = conn.execute(text(
-            "SELECT dato_numerico::int, anio FROM socioeconomico.terridata "
-            "WHERE indicador = 'Población total' ORDER BY anio DESC LIMIT 1"
-        )).fetchone()
+        # Población (TerriData)
+        pop_sql = f"SELECT SUM(dato_numerico::int), anio FROM socioeconomico.terridata {where_terridata} {'AND' if dane_code else 'WHERE'} indicador = 'Población total' GROUP BY anio ORDER BY anio DESC LIMIT 1"
+        pop_row = conn.execute(text(pop_sql), params).fetchone()
         stats["poblacion_total"] = pop_row[0] if pop_row else None
         stats["poblacion_anio"] = pop_row[1] if pop_row else None
 
         stats["manzanas_censales"] = conn.execute(text(
-            "SELECT COUNT(*) FROM cartografia.manzanas_censales"
-        )).scalar()
-
-        # Edificaciones OSM
-        stats["edificaciones_osm"] = conn.execute(text(
-            "SELECT COUNT(*) FROM cartografia.osm_edificaciones"
-        )).scalar()
-
-        # Vías
-        stats["vias_osm"] = conn.execute(text(
-            "SELECT COUNT(*) FROM cartografia.osm_vias"
-        )).scalar()
-
-        # Google Places
-        stats["establecimientos_comerciales"] = conn.execute(text(
-            "SELECT COUNT(*) FROM servicios.google_places"
-        )).scalar()
-
-        # Establecimientos educativos
-        stats["establecimientos_educativos"] = conn.execute(text(
-            "SELECT COUNT(*) FROM socioeconomico.establecimientos_educativos_raw"
-        )).scalar()
-
-        # Matrícula total
-        mat = conn.execute(text(
-            "SELECT SUM(CAST(total_matricula AS INT)) FROM socioeconomico.establecimientos_educativos_raw WHERE total_matricula IS NOT NULL"
-        )).scalar()
-        stats["matricula_total"] = int(mat) if mat else None
+            f"SELECT COUNT(*) FROM cartografia.manzanas_censales {where_manzanas}"
+        ), params).scalar()
 
         # ICFES
-        icfes = conn.execute(text("""
+        icfes_sql = f"""
             SELECT COUNT(DISTINCT cole_nombre_establecimiento) as colegios,
                    COUNT(*) as estudiantes_evaluados,
                    AVG(CAST(punt_global AS FLOAT)) as prom_global
             FROM socioeconomico.icfes_raw
-            WHERE punt_global IS NOT NULL
-        """)).fetchone()
+            {where_icfes} {'AND' if dane_code else 'WHERE'} punt_global IS NOT NULL
+        """
+        icfes = conn.execute(text(icfes_sql), params).fetchone()
         stats["icfes"] = {
             "colegios_evaluados": icfes[0],
             "estudiantes_evaluados": icfes[1],
             "promedio_global": round(float(icfes[2]), 1) if icfes[2] else None,
         }
 
-        # IPS Salud
-        stats["ips_salud"] = conn.execute(text(
-            "SELECT COUNT(*) FROM socioeconomico.ips_raw"
-        )).scalar()
-
-        # Seguridad
+        # Seguridad (Agregado)
+        seguridad = {}
         for table, key in [
             ("homicidios_raw", "total_homicidios"),
             ("hurtos_raw", "total_hurtos"),
@@ -87,33 +75,10 @@ def get_summary():
             ("violencia_intrafamiliar_raw", "total_vif"),
         ]:
             val = conn.execute(text(
-                f"SELECT SUM(CAST(cantidad AS INT)) FROM seguridad.{table}"
-            )).scalar()
-            stats[key] = int(val) if val else 0
-
-        # Víctimas conflicto
-        vic = conn.execute(text(
-            "SELECT SUM(CAST(per_ocu AS INT)) FROM seguridad.victimas_raw"
-        )).scalar()
-        stats["total_victimas_conflicto"] = int(vic) if vic else 0
-
-        # Hechos victimizantes principales
-        hechos = conn.execute(text("""
-            SELECT hecho, SUM(CAST(per_ocu AS INT)) as total
-            FROM seguridad.victimas_raw
-            WHERE per_ocu IS NOT NULL
-            GROUP BY hecho
-            ORDER BY total DESC
-            LIMIT 5
-        """)).fetchall()
-        stats["principales_hechos_victimizantes"] = [
-            {"hecho": r[0], "personas": r[1]} for r in hechos
-        ]
-
-        # Servicios públicos
-        stats["prestadores_servicios"] = conn.execute(text(
-            "SELECT COUNT(*) FROM servicios.prestadores_raw"
-        )).scalar()
+                f"SELECT SUM(CAST(cantidad AS INT)) FROM seguridad.{table} {where_seguridad}"
+            ), params).scalar()
+            seguridad[key] = int(val) if val else 0
+        stats["seguridad"] = seguridad
 
     return stats
 

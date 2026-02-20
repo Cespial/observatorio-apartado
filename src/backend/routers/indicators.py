@@ -117,57 +117,57 @@ def list_indicators():
 
 @router.get("/icfes")
 def get_icfes(
+    dane_code: str = Query(None, description="Filtrar por código DANE del municipio"),
     periodo: str = Query(None, description="Filtrar por periodo (ej: '20224')"),
     colegio: str = Query(None, description="Filtrar por nombre de colegio"),
     aggregate: str = Query("colegio", description="Nivel de agregación: 'colegio', 'periodo', 'genero'"),
 ):
     """Resultados ICFES Saber 11 con múltiples niveles de agregación."""
+    conditions = ["1=1"]
+    params = {}
+    
+    if dane_code:
+        conditions.append("cole_cod_mcpio_ubicacion = :dane")
+        params["dane"] = dane_code
+    if periodo:
+        conditions.append("periodo = :p")
+        params["p"] = periodo
+    if colegio:
+        conditions.append("cole_nombre_establecimiento ILIKE :c")
+        params["c"] = f"%{colegio}%"
+    
+    where = " AND ".join(conditions)
+
     if aggregate == "periodo":
-        sql = """
+        sql = f"""
             SELECT periodo,
-                   COUNT(*) as estudiantes,
-                   AVG(CAST(punt_global AS FLOAT)) as prom_global,
-                   AVG(CAST(punt_matematicas AS FLOAT)) as prom_matematicas,
-                   AVG(CAST(punt_lectura_critica AS FLOAT)) as prom_lectura,
-                   AVG(CAST(punt_c_naturales AS FLOAT)) as prom_ciencias,
-                   AVG(CAST(punt_sociales_ciudadanas AS FLOAT)) as prom_sociales,
-                   AVG(CAST(punt_ingles AS FLOAT)) as prom_ingles
-            FROM socioeconomico.icfes_raw
-            GROUP BY periodo
-            ORDER BY periodo
-        """
-        params = {}
-    elif aggregate == "genero":
-        sql = """
-            SELECT estu_genero as genero, periodo,
                    COUNT(*) as estudiantes,
                    AVG(CAST(punt_global AS FLOAT)) as prom_global,
                    AVG(CAST(punt_matematicas AS FLOAT)) as prom_matematicas,
                    AVG(CAST(punt_lectura_critica AS FLOAT)) as prom_lectura
             FROM socioeconomico.icfes_raw
-            WHERE estu_genero IS NOT NULL
+            WHERE {where}
+            GROUP BY periodo
+            ORDER BY periodo
+        """
+    elif aggregate == "genero":
+        sql = f"""
+            SELECT estu_genero as genero, periodo,
+                   COUNT(*) as estudiantes,
+                   AVG(CAST(punt_global AS FLOAT)) as prom_global,
+                   AVG(CAST(punt_matematicas AS FLOAT)) as prom_matematicas
+            FROM socioeconomico.icfes_raw
+            WHERE {where} AND estu_genero IS NOT NULL
             GROUP BY estu_genero, periodo
             ORDER BY periodo, genero
         """
-        params = {}
     else:
-        conditions = ["1=1"]
-        params = {}
-        if periodo:
-            conditions.append("periodo = :p")
-            params["p"] = periodo
-        if colegio:
-            conditions.append("cole_nombre_establecimiento ILIKE :c")
-            params["c"] = f"%{colegio}%"
-        where = " AND ".join(conditions)
         sql = f"""
             SELECT cole_nombre_establecimiento as colegio, periodo,
                    COUNT(*) as estudiantes,
                    AVG(CAST(punt_global AS FLOAT)) as prom_global,
                    AVG(CAST(punt_matematicas AS FLOAT)) as prom_matematicas,
-                   AVG(CAST(punt_lectura_critica AS FLOAT)) as prom_lectura,
-                   AVG(CAST(punt_c_naturales AS FLOAT)) as prom_ciencias,
-                   AVG(CAST(punt_sociales_ciudadanas AS FLOAT)) as prom_sociales
+                   AVG(CAST(punt_lectura_critica AS FLOAT)) as prom_lectura
             FROM socioeconomico.icfes_raw
             WHERE {where}
             GROUP BY cole_nombre_establecimiento, periodo
@@ -178,6 +178,7 @@ def get_icfes(
 
 @router.get("/seguridad/serie")
 def get_seguridad_serie(
+    dane_code: str = Query(None, description="Filtrar por código DANE del municipio"),
     tipo: str = Query("homicidios", description="homicidios, hurtos, delitos_sexuales, violencia_intrafamiliar"),
 ):
     """Serie temporal de delitos por año."""
@@ -189,25 +190,32 @@ def get_seguridad_serie(
     }
     table = table_map.get(tipo)
     if not table:
-        raise HTTPException(status_code=400, detail=f"Tipo '{tipo}' no válido. Opciones: {list(table_map.keys())}")
+        raise HTTPException(status_code=400, detail=f"Tipo '{tipo}' no válido.")
+
+    conditions = ["fecha_hecho IS NOT NULL"]
+    params = {}
+    if dane_code:
+        conditions.append("codigo_dane = :dane")
+        params["dane"] = dane_code
+    
+    where = " AND ".join(conditions)
 
     sql = f"""
         SELECT EXTRACT(YEAR FROM fecha_hecho)::int as anio,
                SUM(CAST(cantidad AS INT)) as total,
-               sexo,
-               COUNT(*) as registros
+               sexo
         FROM {table}
-        WHERE fecha_hecho IS NOT NULL
+        WHERE {where}
         GROUP BY anio, sexo
         ORDER BY anio, sexo
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql)).fetchall()
-    return [{"anio": r[0], "total": r[1], "sexo": r[2], "registros": r[3]} for r in rows]
+    return query_dicts(sql, params)
 
 
 @router.get("/seguridad/resumen")
-def get_seguridad_resumen():
+def get_seguridad_resumen(
+    dane_code: str = Query(None, description="Filtrar por código DANE del municipio")
+):
     """Resumen de todos los indicadores de seguridad."""
     tables = {
         "homicidios": "seguridad.homicidios_raw",
@@ -216,119 +224,67 @@ def get_seguridad_resumen():
         "violencia_intrafamiliar": "seguridad.violencia_intrafamiliar_raw",
     }
     result = {}
+    params = {"dane": dane_code} if dane_code else {}
+    where = "WHERE codigo_dane = :dane" if dane_code else ""
+    
     with engine.connect() as conn:
         for name, table in tables.items():
             row = conn.execute(text(f"""
                 SELECT COUNT(*) as registros,
-                       SUM(CAST(cantidad AS INT)) as total_casos,
-                       MIN(fecha_hecho) as desde,
-                       MAX(fecha_hecho) as hasta
+                       SUM(CAST(cantidad AS INT)) as total_casos
                 FROM {table}
-            """)).fetchone()
+                {where}
+            """), params).fetchone()
             result[name] = {
                 "registros": row[0],
-                "total_casos": row[1],
-                "desde": str(row[2]) if row[2] else None,
-                "hasta": str(row[3]) if row[3] else None,
+                "total_casos": row[1]
             }
     return result
 
 
-@router.get("/victimas")
-def get_victimas(
-    hecho: str = Query(None, description="Tipo de hecho victimizante"),
-    aggregate: str = Query("hecho", description="hecho, sexo, etnia, ciclo_vital"),
-):
-    """Víctimas del conflicto armado con múltiples dimensiones."""
-    group_col = {
-        "hecho": "hecho",
-        "sexo": "sexo",
-        "etnia": "etnia",
-        "ciclo_vital": "ciclo_vital",
-    }.get(aggregate, "hecho")
-
-    conditions = ["1=1"]
-    params = {}
-    if hecho:
-        conditions.append("hecho = :h")
-        params["h"] = hecho
-
-    where = " AND ".join(conditions)
-    sql = f"""
-        SELECT {group_col} as dimension,
-               SUM(CAST(per_ocu AS INT)) as personas,
-               SUM(CAST(eventos AS INT)) as eventos,
-               COUNT(*) as registros
-        FROM seguridad.victimas_raw
-        WHERE {where}
-        GROUP BY {group_col}
-        ORDER BY personas DESC
-    """
-    with engine.connect() as conn:
-        rows = conn.execute(text(sql), params).fetchall()
-    return [{"dimension": r[0], "personas": r[1], "eventos": r[2], "registros": r[3]} for r in rows]
-
-
-@router.get("/educacion/establecimientos")
-def get_establecimientos(
-    sector: str = Query(None, description="OFICIAL o NO OFICIAL"),
-):
-    """Establecimientos educativos con matrícula."""
-    conditions = ["1=1"]
-    params = {}
-    if sector:
-        conditions.append("sector = :s")
-        params["s"] = sector
-    where = " AND ".join(conditions)
-    sql = f"""
-        SELECT nombre_establecimiento, codigo_dane, municipio, sector, caracter,
-               calendario, direccion, total_matricula, cantidad_sedes
-        FROM socioeconomico.establecimientos_educativos_raw
-        WHERE {where}
-        ORDER BY CAST(total_matricula AS INT) DESC NULLS LAST
-    """
-    return query_dicts(sql, params)
-
-
-@router.get("/salud/ips")
-def get_ips():
-    """Instituciones Prestadoras de Servicios de Salud."""
-    sql = """
-        SELECT nombreprestador, nombresede, naturalezajuridica, ese,
-               municipioprestadordesc, departamentoprestadordesc,
-               direccionprestador, telefonoprestador
-        FROM socioeconomico.ips_raw
-        LIMIT 500
-    """
-    return query_dicts(sql)
-
-
-# ── Sprint 3 endpoints ──────────────────────────────────────────────
-
-
 @router.get("/terridata")
 def get_terridata(
+    dane_code: str = Query(None, description="Filtrar por código DANE (ej: 05045)"),
     dimension: str = Query(None, description="Dimension (Salud, Economía, Finanzas públicas, etc.)"),
-    indicador: str = Query(None, description="Filtrar por nombre de indicador (parcial, ILIKE)"),
+    indicador: str = Query(None, description="Filtrar por nombre de indicador"),
 ):
-    """Indicadores TerriData DNP por dimensión."""
+    """Indicadores TerriData DNP por municipio o agregados regionalmente."""
     conditions = ["1=1"]
     params = {}
+    
+    if dane_code:
+        conditions.append("codigo_municipio = :dane")
+        params["dane"] = dane_code
+        
     if dimension:
         conditions.append("dimension = :d")
         params["d"] = dimension
     if indicador:
         conditions.append("indicador ILIKE :i")
         params["i"] = f"%{indicador}%"
+        
     where = " AND ".join(conditions)
-    sql = f"""
-        SELECT dimension, subcategoria, indicador,
-               dato_numerico, dato_cualitativo, anio,
-               fuente, unidad_de_medida
-        FROM socioeconomico.terridata
-        WHERE {where}
-        ORDER BY dimension, indicador, anio
-    """
+    
+    # Si no hay dane_code, promediamos los valores por indicador y año para la región
+    if not dane_code:
+        sql = f"""
+            SELECT dimension, subcategoria, indicador,
+                   AVG(dato_numerico) as dato_numerico, 
+                   anio, unidad_de_medida, 'Promedio Regional' as fuente
+            FROM socioeconomico.terridata
+            WHERE {where}
+            GROUP BY dimension, subcategoria, indicador, anio, unidad_de_medida
+            ORDER BY dimension, indicador, anio
+        """
+    else:
+        sql = f"""
+            SELECT dimension, subcategoria, indicador,
+                   dato_numerico, dato_cualitativo, anio,
+                   fuente, unidad_de_medida
+            FROM socioeconomico.terridata
+            WHERE {where}
+            ORDER BY dimension, indicador, anio
+        """
     return query_dicts(sql, params)
 
 

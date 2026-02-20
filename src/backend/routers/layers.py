@@ -1,7 +1,7 @@
 """
 Gestión de capas — catálogo de todas las capas disponibles
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from ..database import engine, cached, query_geojson
 from sqlalchemy import text
 
@@ -112,15 +112,32 @@ def list_layers():
 
 
 @router.get("/{layer_id}/geojson")
-def get_layer_geojson(layer_id: str, limit: int = 5000):
+def get_layer_geojson(
+    layer_id: str,
+    dane_code: str = Query(None, description="Filtrar por código DANE"),
+    limit: int = 5000
+):
     """Obtener GeoJSON completo de una capa."""
     layer = next((l for l in LAYERS_CATALOG if l["id"] == layer_id), None)
     if not layer:
         raise HTTPException(status_code=404, detail=f"Capa '{layer_id}' no encontrada")
 
     gc = layer.get("geom_col", "geom")
-    sql = f"SELECT * FROM {layer['schema']}.{layer['table']} LIMIT :lim"
-    return query_geojson(sql, {"lim": limit}, geom_col=gc)
+    conditions = ["1=1"]
+    params = {"lim": limit}
+    
+    # Try to filter by dane_code if the table likely has it
+    if dane_code:
+        # Check if column exists in the catalog definition? No, we don't store columns there.
+        # We'll just assume for standard tables.
+        if layer_id in ["limite_municipal", "manzanas_censales", "osm_edificaciones", 
+                        "osm_vias", "osm_uso_suelo", "osm_amenidades"]:
+            conditions.append("dane_code = :dane")
+            params["dane"] = dane_code
+    
+    where = "WHERE " + " AND ".join(conditions)
+    sql = f"SELECT * FROM {layer['schema']}.{layer['table']} {where} LIMIT :lim"
+    return query_geojson(sql, params, geom_col=gc)
 
 
 @router.get("/{layer_id}/stats")

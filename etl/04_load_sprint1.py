@@ -20,13 +20,107 @@ from sqlalchemy import create_engine, text
 # ============================================================
 # CONFIGURACION
 # ============================================================
+from config import MUNICIPIOS, URABA_DANE_CODES, DB_URL
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 DOCS_DIR = BASE_DIR / "docs"
 
-DB_URL = "postgresql://cristianespinal@localhost:5433/observatorio_apartado"
-
 engine = create_engine(DB_URL)
+
+# ============================================================
+# FUNCIONES AUXILIARES
+# ============================================================
+
+def clean_columns(df):
+    """Normaliza nombres de columnas: minusculas, sin espacios."""
+    df.columns = [str(c) for c in df.columns]
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.lower()
+        .str.replace(r'[^\w]+', '_', regex=True)
+        .str.strip('_')
+    )
+    return df
+
+
+def find_dane_col(df):
+    """Intenta encontrar una columna con codigos DANE municipio."""
+    candidates = ['municipio_id', 'cod_mpio', 'codigo_municipio', 'codigo_dane', 'cod_dane_municipio', 'municipio_codigo']
+    for c in df.columns:
+        if c in candidates: return c
+    # Look for 05045 in values
+    for c in df.columns:
+        if df[c].astype(str).str.contains('05045').any(): return c
+    return None
+
+
+def load_dataset(rel_path, schema, table, expected):
+    """Carga un dataset JSON a PostgreSQL. Retorna dict con resultado."""
+    filepath = DATA_DIR / rel_path
+    full_table = f"{schema}.{table}"
+
+    if not filepath.exists():
+        return {"table": full_table, "status": "skip", "rows": 0, "detail": "File not found"}
+
+    try:
+        df = load_json_to_df(filepath)
+        df = clean_columns(df)
+
+        # Detect DANE column and filter
+        dane_col = find_dane_col(df)
+        if dane_col:
+            df = df[df[dane_col].astype(str).str.contains('|'.join(URABA_DANE_CODES))]
+            df['dane_code'] = df[dane_col].astype(str).str.extract(f"({'|'.join(URABA_DANE_CODES)})")[0]
+        else:
+            # If no DANE col, assume it's Apartado for now or generic regional
+            df['dane_code'] = '05045' # Default to Apartado if unknown
+
+        # Ensure schema exists
+        with engine.connect() as conn:
+            conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema}"))
+            conn.commit()
+
+        # Handle columns with objects
+        for col in df.columns:
+            if any(isinstance(v, (dict, list)) for v in df[col].dropna().head(5)):
+                df[col] = df[col].apply(lambda x: json.dumps(x, ensure_ascii=False) if isinstance(x, (dict, list)) else x)
+
+        df.to_sql(table, engine, schema=schema, if_exists='append', index=False, method='multi', chunksize=1000)
+
+        print(f"  [OK]   {full_table}: {len(df)} filas")
+        return {"table": full_table, "status": "ok", "rows": len(df)}
+
+    except Exception as e:
+        print(f"  [FAIL] {full_table}: {e}")
+        return {"table": full_table, "status": "error", "rows": 0, "detail": str(e)}
+
+def truncate_tables():
+    """Limpia las tablas antes de la carga regional."""
+    with engine.connect() as conn:
+        for _, schema, table, _ in DATASETS:
+            conn.execute(text(f"DROP TABLE IF EXISTS {schema}.{table} CASCADE"))
+        conn.commit()
+
+def main():
+    print("=" * 60)
+    print("ETL Sprint 1 -- REGIONAL URABÁ")
+    print("=" * 60)
+
+    truncate_tables()
+    
+    results = []
+    for rel_path, schema, table, expected in DATASETS:
+        # Check if file exists as is, or if we should look for per-municipality files
+        if "{name}" in rel_path:
+             for dane_code, name, _ in MUNICIPIOS:
+                 m_path = rel_path.replace("{name}", name.lower().replace(" ", "_"))
+                 results.append(load_dataset(m_path, schema, table, expected))
+        else:
+             results.append(load_dataset(rel_path, schema, table, expected))
+
+    generate_completeness_report()
+    return 0
 
 # ============================================================
 # DATASETS A CARGAR

@@ -164,25 +164,49 @@ def list_variables():
 
 @router.get("/scatter")
 def scatter_analysis(
+    dane_code: str = Query(None, description="Filtrar por código DANE del municipio"),
     var_x: str = Query(..., description="Variable eje X"),
     var_y: str = Query(..., description="Variable eje Y"),
 ):
     """
-    Cruce scatter plot entre dos variables.
-    Retorna puntos (x, y) con labels, coeficiente de correlación y línea de regresión.
+    Cruce scatter plot entre dos variables con filtro regional.
     """
     if var_x not in VARIABLES:
-        raise HTTPException(status_code=400, detail=f"Variable '{var_x}' no existe. Usa /api/crossvar/variables")
+        raise HTTPException(status_code=400, detail=f"Variable '{var_x}' no existe.")
     if var_y not in VARIABLES:
-        raise HTTPException(status_code=400, detail=f"Variable '{var_y}' no existe. Usa /api/crossvar/variables")
+        raise HTTPException(status_code=400, detail=f"Variable '{var_y}' no existe.")
 
     vx = VARIABLES[var_x]
     vy = VARIABLES[var_y]
+    
+    params = {"dane": dane_code} if dane_code else {}
+    
+    def apply_filter(sql, geo_level):
+        if not dane_code:
+            return sql
+        
+        col_map = {
+            "manzana": "cod_dane_municipio",
+            "colegio": "cole_cod_mcpio_ubicacion",
+            "anual": "codigo_dane",
+            "hecho": "codigo_dane", # assume security context for victimas
+            "categoria": "codigo_dane" # placeholder if google_places had dane codes
+        }
+        col = col_map.get(geo_level)
+        if not col:
+            return sql
+            
+        if "WHERE" in sql.upper():
+            return sql + f" AND {col} = :dane"
+        else:
+            return sql + f" WHERE {col} = :dane"
 
-    # Get data for both variables
+    sql_x = apply_filter(vx["sql"], vx["geo_level"])
+    sql_y = apply_filter(vy["sql"], vy["geo_level"])
+
     with engine.connect() as conn:
-        rows_x = conn.execute(text(vx["sql"])).fetchall()
-        rows_y = conn.execute(text(vy["sql"])).fetchall()
+        rows_x = conn.execute(text(sql_x), params).fetchall()
+        rows_y = conn.execute(text(sql_y), params).fetchall()
 
     # Create dictionaries for join
     dict_x = {str(r[0]): float(r[1]) for r in rows_x if r[1] is not None}

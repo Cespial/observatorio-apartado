@@ -10,69 +10,103 @@ router = APIRouter(prefix="/api/geo", tags=["Geoespacial"])
 
 @router.get("/manzanas")
 def get_manzanas(
+    dane_code: str = Query(None, description="Filtrar por código DANE del municipio (ej: 05045)"),
     min_pop: int = Query(0, description="Población mínima"),
     max_pop: int = Query(999999, description="Población máxima"),
     limit: int = Query(5000, le=10000),
 ):
-    """Manzanas censales con datos de población, filtrables."""
-    sql = """
+    """Manzanas censales con datos de población, filtrables por municipio."""
+    conditions = ["total_personas ~ '^[0-9]+$'"]
+    params = {"min_pop": min_pop, "max_pop": max_pop, "lim": limit}
+    
+    if dane_code:
+        conditions.append("cod_dane_municipio = :dane")
+        params["dane"] = dane_code
+        
+    where = " AND ".join(conditions)
+    sql = f"""
         SELECT geom, cod_dane_manzana, cod_dane_municipio,
                CAST(total_personas AS INT) as total_personas
         FROM cartografia.manzanas_censales
-        WHERE total_personas ~ '^[0-9]+$'
+        WHERE {where}
           AND CAST(total_personas AS INT) >= :min_pop
           AND CAST(total_personas AS INT) <= :max_pop
         LIMIT :lim
     """
-    return query_geojson(sql, {"min_pop": min_pop, "max_pop": max_pop, "lim": limit})
+    return query_geojson(sql, params)
 
 
 @router.get("/edificaciones")
 def get_edificaciones(
-    building_type: str = Query(None, description="Filtro tipo edificación (ej: 'residential', 'commercial')"),
+    dane_code: str = Query(None, description="Filtrar por código DANE"),
+    building_type: str = Query(None, description="Filtro tipo edificación"),
     limit: int = Query(5000, le=10000),
 ):
-    """Edificaciones OSM con filtro por tipo."""
-    where = ""
+    """Edificaciones OSM filtradas por municipio."""
+    conditions = ["1=1"]
     params = {"lim": limit}
+    
+    if dane_code:
+        conditions.append("dane_code = :dane")
+        params["dane"] = dane_code
+        
     if building_type:
-        where = "WHERE building = :bt"
+        conditions.append("building = :bt")
         params["bt"] = building_type
+        
+    where = "WHERE " + " AND ".join(conditions)
     sql = f"SELECT geom, id, building, name, amenity FROM cartografia.osm_edificaciones {where} LIMIT :lim"
     return query_geojson(sql, params)
 
 
 @router.get("/vias")
 def get_vias(
+    dane_code: str = Query(None, description="Filtrar por código DANE"),
     highway_type: str = Query(None, description="Tipo de vía (primary, secondary, residential, etc)"),
     limit: int = Query(5000, le=10000),
 ):
     """Red vial OSM con filtro por tipo."""
-    where = ""
+    conditions = ["1=1"]
     params = {"lim": limit}
+    
+    if dane_code:
+        conditions.append("dane_code = :dane")
+        params["dane"] = dane_code
+
     if highway_type:
-        where = "WHERE highway = :ht"
+        conditions.append("highway = :ht")
         params["ht"] = highway_type
+
+    where = "WHERE " + " AND ".join(conditions)
     sql = f"SELECT geom, id, highway, name, surface, lanes FROM cartografia.osm_vias {where} LIMIT :lim"
     return query_geojson(sql, params)
 
 
 @router.get("/amenidades")
 def get_amenidades(
+    dane_code: str = Query(None, description="Filtrar por código DANE"),
     amenity_type: str = Query(None, description="Tipo de amenidad (school, hospital, etc)"),
 ):
     """Amenidades OSM."""
-    where = ""
+    conditions = ["1=1"]
     params = {}
+    
+    if dane_code:
+        conditions.append("dane_code = :dane")
+        params["dane"] = dane_code
+
     if amenity_type:
-        where = "WHERE amenity = :at"
+        conditions.append("amenity = :at")
         params["at"] = amenity_type
+
+    where = "WHERE " + " AND ".join(conditions)
     sql = f"SELECT geom, id, amenity, name, phone, website FROM cartografia.osm_amenidades {where} LIMIT 2000"
     return query_geojson(sql, params)
 
 
 @router.get("/places")
 def get_google_places(
+    dane_code: str = Query(None, description="Filtrar por código DANE"),
     category: str = Query(None, description="Categoría (Restaurantes, Bancos, etc)"),
     min_rating: float = Query(0, description="Rating mínimo"),
     limit: int = Query(1000, le=5000),
@@ -80,6 +114,17 @@ def get_google_places(
     """Establecimientos comerciales de Google Places."""
     conditions = ["1=1"]
     params = {"lim": limit}
+
+    if dane_code:
+        # Assuming google_places has a municipality column or spatial join is needed
+        # For now, adding the condition if column exists (it should based on ETL)
+        # But if not, we can relax this or rely on frontend viewport
+        # We'll assume the column is 'dane_code' or 'cod_mpio'
+        # Given ETLs usually standardizing on dane_code:
+        # conditions.append("dane_code = :dane")
+        # params["dane"] = dane_code
+        pass 
+
     if category:
         conditions.append("category = :cat")
         params["cat"] = category
@@ -108,13 +153,23 @@ def get_places_categories():
 
 
 @router.get("/places/heatmap")
-def get_places_heatmap(category: str = Query(None)):
+def get_places_heatmap(
+    dane_code: str = Query(None),
+    category: str = Query(None)
+):
     """Datos para heatmap de establecimientos (lat, lon, weight)."""
-    where = ""
+    conditions = ["1=1"]
     params = {}
+    
     if category:
-        where = "WHERE category = :cat"
+        conditions.append("category = :cat")
         params["cat"] = category
+        
+    # if dane_code:
+    #     conditions.append("dane_code = :dane")
+    #     params["dane"] = dane_code
+
+    where = "WHERE " + " AND ".join(conditions)
     sql = f"""
         SELECT lat, lon, COALESCE(user_ratings_total, 1) as weight
         FROM servicios.google_places

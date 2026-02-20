@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useMemo, useState } from 'react'
 import { Map } from 'react-map-gl/maplibre'
 import DeckGL from '@deck.gl/react'
+import { FlyToInterpolator } from '@deck.gl/core'
 import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers'
 import { HeatmapLayer } from '@deck.gl/aggregation-layers'
 import { useStore } from '../store'
@@ -87,7 +88,7 @@ export default function MapView() {
       )
     }
 
-    if (activeLayers.includes('osm_edificaciones') && layerData.osm_edificaciones) {
+    if (activeLayers.includes('osm_edificaciones') && layerData.osm_edificaciones && viewState.zoom > 14) {
       result.push(
         new GeoJsonLayer({
           id: 'osm_edificaciones',
@@ -115,7 +116,7 @@ export default function MapView() {
       )
     }
 
-    if (activeLayers.includes('manzanas_censales') && layerData.manzanas) {
+    if (activeLayers.includes('manzanas_censales') && layerData.manzanas && viewState.zoom > 11) {
       result.push(
         new GeoJsonLayer({
           id: 'manzanas_censales',

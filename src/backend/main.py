@@ -1,5 +1,5 @@
 """
-Observatorio de Ciudades — Apartadó, Antioquia
+Observatorio de Ciudades — Urabá
 API Backend (FastAPI)
 """
 import logging
@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.exc import SQLAlchemyError
-from .routers import layers, geo, indicators, crossvar, stats
+from .routers import layers, geo, indicators, crossvar, stats, empleo, analytics
 
 logger = logging.getLogger("observatorio")
 
@@ -20,33 +20,32 @@ TAGS_METADATA = [
     {"name": "Indicadores", "description": "Indicadores socioeconómicos, educativos, de seguridad, salud, economía y gobierno"},
     {"name": "Cruce de Variables", "description": "Análisis multivariado: scatter, correlación, series temporales"},
     {"name": "Estadísticas", "description": "Resumen ejecutivo y catálogo de datos"},
+    {"name": "Empleo", "description": "Mercado laboral y vacantes (Uraba Empleos)"},
+    {"name": "Analytics", "description": "Inteligencia territorial, gaps y rankings regionales"},
 ]
 
 app = FastAPI(
-    title="Observatorio de Ciudades — Apartadó",
+    title="Observatorio de Ciudades — Urabá",
     description=(
-        "## API de datos territoriales\n\n"
-        "Integra información geoespacial, socioeconómica, de seguridad, salud, "
-        "educación, economía y gobernanza del municipio de **Apartadó, Antioquia** "
-        "(DANE 05045), región de Urabá.\n\n"
+        "## API de datos territoriales — Región de Urabá\n\n"
+        "Plataforma integral de inteligencia territorial que consolida información "
+        "geoespacial, socioeconómica y de mercado laboral para los **11 municipios** "
+        "de la subregión de Urabá, Antioquia.\n\n"
+        "### Municipios Cubiertos\n"
+        "- Apartadó, Turbo, Carepa, Chigorodó, Necoclí\n"
+        "- Arboletes, San Juan de Urabá, San Pedro de Urabá\n"
+        "- Mutatá, Murindó, Vigía del Fuerte\n\n"
         "### Fuentes de datos\n"
-        "- **DANE**: Censo 2018, MGN, proyecciones poblacionales\n"
-        "- **DNP**: TerriData (800+ indicadores municipales)\n"
+        "- **DANE**: Censo 2018, MGN, proyecciones\n"
+        "- **DNP**: TerriData (Indicadores municipales comparados)\n"
         "- **ICFES**: Saber 11 resultados por colegio\n"
-        "- **Policía Nacional**: Homicidios, hurtos, delitos sexuales, VIF\n"
-        "- **Unidad de Víctimas**: Víctimas del conflicto armado\n"
-        "- **INS**: SIVIGILA eventos epidemiológicos, IRCA calidad del agua\n"
-        "- **MinTIC**: Internet fijo, índice de gobierno digital\n"
-        "- **SECOP II**: Contratación pública\n"
-        "- **MinCIT**: Registro Nacional de Turismo\n"
-        "- **Google Places API**: Establecimientos comerciales\n"
-        "- **OpenStreetMap**: Edificaciones, vías, amenidades\n\n"
-        "### Base de datos\n"
-        "**55 tablas** · **123,270 registros** · PostgreSQL + PostGIS 3.6\n\n"
+        "- **Policía Nacional**: Seguridad y convivencia\n"
+        "- **Uraba Empleos**: Vacantes laborales en tiempo real\n"
+        "- **OpenStreetMap & Google Places**: Infraestructura y servicios\n\n"
         "### Frontend\n"
-        "React 18 + Deck.gl + MapLibre GL + Recharts → `http://localhost:3000`"
+        "React 18 + Deck.gl + MapLibre GL + Recharts"
     ),
-    version="2.0.0",
+    version="3.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_tags=TAGS_METADATA,
@@ -86,6 +85,8 @@ app.include_router(geo.router)
 app.include_router(indicators.router)
 app.include_router(crossvar.router)
 app.include_router(stats.router)
+app.include_router(empleo.router)
+app.include_router(analytics.router)
 
 
 @app.exception_handler(SQLAlchemyError)
@@ -104,34 +105,18 @@ async def general_exception_handler(request: Request, exc: Exception):
 def root():
     """Health check y catálogo de endpoints principales."""
     return {
-        "name": "Observatorio de Ciudades — Apartadó",
-        "version": "2.0.0",
-        "municipio": "Apartadó",
-        "departamento": "Antioquia",
-        "dane_code": "05045",
-        "database": {
-            "tables": 55,
-            "records": 123270,
-            "schemas": ["cartografia", "socioeconomico", "seguridad", "servicios"],
-        },
+        "name": "Observatorio de Ciudades — Urabá",
+        "version": "3.0.0",
+        "municipios": [
+            "Apartadó", "Turbo", "Carepa", "Chigorodó", "Necoclí",
+            "Arboletes", "San Juan de Urabá", "San Pedro de Urabá",
+            "Mutatá", "Murindó", "Vigía del Fuerte"
+        ],
         "endpoints": {
             "docs": "/docs",
-            "redoc": "/redoc",
-            "layers": "/api/layers",
-            "geo": "/api/geo/manzanas",
+            "geo": "/api/geo/manzanas?dane_code=05045",
             "indicators": "/api/indicators",
-            "crossvar": "/api/crossvar/variables",
-            "stats": "/api/stats/summary",
-            "catalog": "/api/stats/data-catalog",
-            "terridata": "/api/indicators/terridata?dimension=Salud",
-            "salud_irca": "/api/indicators/salud/irca",
-            "salud_sivigila": "/api/indicators/salud/sivigila/resumen",
-            "economia_internet": "/api/indicators/economia/internet/serie",
-            "economia_secop": "/api/indicators/economia/secop",
-            "economia_turismo": "/api/indicators/economia/turismo",
-            "gobierno_finanzas": "/api/indicators/gobierno/finanzas",
-            "gobierno_desempeno": "/api/indicators/gobierno/desempeno",
-            "gobierno_digital": "/api/indicators/gobierno/digital",
-            "gobierno_pobreza": "/api/indicators/gobierno/pobreza",
+            "empleo": "/api/empleo/ofertas",
+            "analytics": "/api/analytics/ranking",
         },
     }

@@ -25,16 +25,48 @@ export default function Header() {
             Observatorio de Ciudades
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-            Plataforma de datos territoriales
+            Urabá Antioqueño
           </div>
         </div>
         <div style={{ width: 1, height: 32, background: 'var(--border)', margin: '0 8px' }} />
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent-primary)' }}>
-            Apartado, Antioquia
-          </div>
-          <div className="font-mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-            DANE 05045
+        
+        {/* Territorial Context Selector */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Vista:</span>
+          <div style={{ position: 'relative' }}>
+            <select
+              value={useStore(s => s.selectedMunicipio)}
+              onChange={(e) => useStore.getState().setSelectedMunicipio(e.target.value)}
+              style={{
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                padding: '6px 32px 6px 12px',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                outline: 'none',
+                appearance: 'none',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                transition: 'all 0.2s ease'
+              }}
+              onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+            >
+              {useStore.getState().municipios.map(m => (
+                <option key={m.name} value={m.name}>{m.name}</option>
+              ))}
+            </select>
+            <span style={{
+              position: 'absolute',
+              right: '10px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              pointerEvents: 'none',
+              fontSize: '10px',
+              color: 'var(--text-muted)'
+            }}>▼</span>
           </div>
         </div>
       </div>
