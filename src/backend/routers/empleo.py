@@ -29,11 +29,14 @@ def get_ofertas(
     sector: str = Query(None, description="Filtrar por sector"),
     dane_code: str = Query(None, description="Filtrar por código DANE"),
     busqueda: str = Query(None, description="Buscar en título o descripción"),
-    limit: int = Query(100, le=1000),
+    tipo_contrato: str = Query(None, description="Filtrar por tipo de contrato"),
+    modalidad: str = Query(None, description="Filtrar por modalidad"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, le=100),
 ):
-    """Listado de ofertas laborales."""
+    """Listado de ofertas laborales con paginación."""
     conditions = ["1=1"]
-    params = {"lim": limit}
+    params = {}
     if municipio:
         conditions.append("municipio ILIKE :muni")
         params["muni"] = f"%{municipio}%"
@@ -49,18 +52,42 @@ def get_ofertas(
     if busqueda:
         conditions.append("(titulo ILIKE :q OR descripcion ILIKE :q)")
         params["q"] = f"%{busqueda}%"
+    if tipo_contrato:
+        conditions.append("tipo_contrato = :tipo_contrato")
+        params["tipo_contrato"] = tipo_contrato
+    if modalidad:
+        conditions.append("modalidad = :modalidad")
+        params["modalidad"] = modalidad
 
     where = " AND ".join(conditions)
+    offset = (page - 1) * page_size
+    params["lim"] = page_size
+    params["off"] = offset
+
+    count_rows = query_dicts(
+        f"SELECT COUNT(*) as total FROM empleo.ofertas_laborales WHERE {where}", params
+    )
+    total = count_rows[0]["total"] if count_rows else 0
+    total_pages = max(1, -(-total // page_size))
+
     sql = f"""
         SELECT id, titulo, empresa, salario_texto, salario_numerico,
-               municipio, dane_code, fuente, sector, skills,
-               fecha_publicacion, enlace
+               descripcion, municipio, dane_code, fuente, sector, skills,
+               fecha_publicacion, enlace,
+               nivel_experiencia, tipo_contrato, nivel_educativo, modalidad
         FROM empleo.ofertas_laborales
         WHERE {where}
         ORDER BY fecha_publicacion DESC NULLS LAST
-        LIMIT :lim
+        LIMIT :lim OFFSET :off
     """
-    return query_dicts(sql, params)
+    items = query_dicts(sql, params)
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+    }
 
 
 @router.get("/stats")
@@ -401,3 +428,67 @@ def get_empleo_kpis(dane_code: str = Query(None)):
         "sector_top": row[4] if row else None,
         "empresa_top": row[5] if row else None,
     }
+
+
+@router.get("/experiencia")
+@cached(ttl_seconds=3600)
+def get_experiencia_dist(dane_code: str = Query(None)):
+    """Distribución por nivel de experiencia requerida."""
+    conditions = ["nivel_experiencia IS NOT NULL"]
+    params = {}
+    if dane_code:
+        conditions.append("dane_code = :dane")
+        params["dane"] = dane_code
+    where = " AND ".join(conditions)
+    return query_dicts(
+        f"SELECT nivel_experiencia as nivel, COUNT(*) as total FROM empleo.ofertas_laborales WHERE {where} GROUP BY nivel_experiencia ORDER BY total DESC",
+        params,
+    )
+
+
+@router.get("/contratos")
+@cached(ttl_seconds=3600)
+def get_contratos_dist(dane_code: str = Query(None)):
+    """Distribución por tipo de contrato."""
+    conditions = ["tipo_contrato IS NOT NULL"]
+    params = {}
+    if dane_code:
+        conditions.append("dane_code = :dane")
+        params["dane"] = dane_code
+    where = " AND ".join(conditions)
+    return query_dicts(
+        f"SELECT tipo_contrato as tipo, COUNT(*) as total FROM empleo.ofertas_laborales WHERE {where} GROUP BY tipo_contrato ORDER BY total DESC",
+        params,
+    )
+
+
+@router.get("/educacion")
+@cached(ttl_seconds=3600)
+def get_educacion_dist(dane_code: str = Query(None)):
+    """Distribución por nivel educativo requerido."""
+    conditions = ["nivel_educativo IS NOT NULL"]
+    params = {}
+    if dane_code:
+        conditions.append("dane_code = :dane")
+        params["dane"] = dane_code
+    where = " AND ".join(conditions)
+    return query_dicts(
+        f"SELECT nivel_educativo as nivel, COUNT(*) as total FROM empleo.ofertas_laborales WHERE {where} GROUP BY nivel_educativo ORDER BY total DESC",
+        params,
+    )
+
+
+@router.get("/modalidad")
+@cached(ttl_seconds=3600)
+def get_modalidad_dist(dane_code: str = Query(None)):
+    """Distribución por modalidad de trabajo."""
+    conditions = ["modalidad IS NOT NULL"]
+    params = {}
+    if dane_code:
+        conditions.append("dane_code = :dane")
+        params["dane"] = dane_code
+    where = " AND ".join(conditions)
+    return query_dicts(
+        f"SELECT modalidad, COUNT(*) as total FROM empleo.ofertas_laborales WHERE {where} GROUP BY modalidad ORDER BY total DESC",
+        params,
+    )

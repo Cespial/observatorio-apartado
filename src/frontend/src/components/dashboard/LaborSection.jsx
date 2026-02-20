@@ -35,6 +35,48 @@ function fmtSalary(val) {
   return `$${(val / 1000000).toFixed(1)}M`
 }
 
+/** Inline mini sparkline SVG from serie data */
+function MiniSparkline({ data, dataKey, color = '#0050B3' }) {
+  if (!data?.length || data.length < 2) return null
+  const vals = data.map(d => d[dataKey] || 0)
+  const max = Math.max(...vals, 1)
+  const min = Math.min(...vals, 0)
+  const range = max - min || 1
+  const w = 60
+  const h = 20
+  const points = vals.map((v, i) =>
+    `${(i / (vals.length - 1)) * w},${h - ((v - min) / range) * h}`
+  ).join(' ')
+  return (
+    <svg width={w} height={h} style={{ display: 'block', marginTop: 4 }}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Trend badge comparing last two periods */
+function TrendBadge({ data, dataKey }) {
+  if (!data?.length || data.length < 2) return null
+  const curr = data[data.length - 1]?.[dataKey] || 0
+  const prev = data[data.length - 2]?.[dataKey] || 0
+  if (prev === 0) return null
+  const pct = Math.round(((curr - prev) / prev) * 100)
+  const isUp = pct >= 0
+  const color = isUp ? 'var(--semantic-positive)' : 'var(--semantic-negative)'
+  return (
+    <span style={{ fontSize: 10, fontWeight: 600, color, marginLeft: 6 }}>
+      {isUp ? '\u2191' : '\u2193'} {Math.abs(pct)}%
+    </span>
+  )
+}
+
 export default function LaborSection({ empleoData, empleoKpis, empleoAnalytics }) {
   const kpis = empleoKpis
   const stats = empleoData?.stats
@@ -43,23 +85,36 @@ export default function LaborSection({ empleoData, empleoKpis, empleoAnalytics }
   const salarios = empleoData?.salarios
   const sectores = empleoData?.sectores
   const dinamismo = empleoAnalytics?.dinamismo
+  const termometro = empleoAnalytics?.termometro
+
+  // Derive extra KPIs
+  const topFuente = stats?.por_fuente?.[0]
+  const ultimos7 = termometro?.reduce((s, m) => s + (m.ultimos_7_dias || 0), 0)
 
   return (
     <>
       {/* KPI Row */}
       <DashboardCard span={2} title="Mercado Laboral">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent-primary)' }}>
-              {fmt(kpis?.total_ofertas ?? stats?.total_ofertas)}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent-primary)' }}>
+                {fmt(kpis?.total_ofertas ?? stats?.total_ofertas)}
+              </div>
+              <TrendBadge data={serie} dataKey="ofertas" />
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Ofertas totales</div>
+            <MiniSparkline data={serie} dataKey="ofertas" color="#0050B3" />
           </div>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
-              {fmt(kpis?.total_empresas)}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
+                {fmt(kpis?.total_empresas)}
+              </div>
+              <TrendBadge data={serie} dataKey="empresas" />
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Empresas contratando</div>
+            <MiniSparkline data={serie} dataKey="empresas" color="#52C41A" />
           </div>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -67,11 +122,25 @@ export default function LaborSection({ empleoData, empleoKpis, empleoAnalytics }
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Salario promedio</div>
           </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 10 }}>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {kpis?.sector_top || '---'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Sector top</div>
+          </div>
+          <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {topFuente ? `${topFuente.fuente} (${topFuente.total})` : '---'}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Top fuente</div>
+          </div>
+          <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: ultimos7 > 0 ? 'var(--semantic-positive)' : 'var(--text-muted)' }}>
+              {ultimos7 != null ? fmt(ultimos7) : '---'}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Ultimos 7 dias</div>
           </div>
         </div>
       </DashboardCard>

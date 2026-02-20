@@ -41,8 +41,8 @@ jobs:
       - name: Run scraper
         run: |
           cd uraba_empleos
-          python main.py --sources computrabajo elempleo indeed comfama
-        timeout-minutes: 20
+          python main.py --sources computrabajo elempleo indeed comfama linkedin sena comfenalco
+        timeout-minutes: 25
         continue-on-error: true
 
       - name: Copy SQLite to home for ETL

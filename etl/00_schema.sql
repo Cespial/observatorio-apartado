@@ -387,3 +387,35 @@ CREATE INDEX IF NOT EXISTS idx_places_category ON servicios.google_places(catego
 -- ============================================================
 
 -- Se crearán después de cargar datos
+
+-- ============================================================
+-- EMPLEO — Columnas de enriquecimiento NLP
+-- ============================================================
+CREATE SCHEMA IF NOT EXISTS empleo;
+
+CREATE TABLE IF NOT EXISTS empleo.ofertas_laborales (
+    id SERIAL PRIMARY KEY,
+    titulo TEXT NOT NULL,
+    empresa TEXT,
+    salario_texto TEXT,
+    salario_numerico INTEGER,
+    descripcion TEXT,
+    fecha_publicacion DATE,
+    enlace TEXT,
+    municipio TEXT NOT NULL,
+    dane_code TEXT,
+    fuente TEXT NOT NULL,
+    sector TEXT,
+    skills TEXT[],
+    fecha_scraping TIMESTAMP,
+    content_hash TEXT,
+    nivel_experiencia TEXT,
+    tipo_contrato TEXT,
+    nivel_educativo TEXT,
+    modalidad TEXT
+);
+
+ALTER TABLE empleo.ofertas_laborales ADD COLUMN IF NOT EXISTS nivel_experiencia TEXT;
+ALTER TABLE empleo.ofertas_laborales ADD COLUMN IF NOT EXISTS tipo_contrato TEXT;
+ALTER TABLE empleo.ofertas_laborales ADD COLUMN IF NOT EXISTS nivel_educativo TEXT;
+ALTER TABLE empleo.ofertas_laborales ADD COLUMN IF NOT EXISTS modalidad TEXT;

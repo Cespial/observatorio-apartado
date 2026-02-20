@@ -102,6 +102,10 @@ export const useStore = create((set, get) => ({
         empleoKpis: null,
         empleoAnalytics: null,
         businessDirectory: null,
+        ofertasExplorer: null,
+        sectorMunicipioMatrix: null,
+        ofertaDemandaData: null,
+        enrichmentData: null,
         errors: {},
       }))
 
@@ -145,6 +149,12 @@ export const useStore = create((set, get) => ({
   empleoData: null,
   empleoKpis: null,
   empleoAnalytics: null,
+  ofertasExplorer: null,
+  ofertasExplorerLoading: false,
+  ofertasExplorerParams: { page: 1, search: '', sector: null, fuente: null },
+  sectorMunicipioMatrix: null,
+  ofertaDemandaData: null,
+  enrichmentData: null,
   errors: {},
   selectedCategory: null,
   setSelectedCategory: (cat) => set({ selectedCategory: cat }),
@@ -406,6 +416,61 @@ export const useStore = create((set, get) => ({
     } catch (e) {
       console.error('fetchEmpleoAnalytics:', e)
       set((s) => ({ errors: { ...s.errors, empleoAnalytics: e.message } }))
+    }
+  },
+  fetchOfertasExplorer: async (params = {}) => {
+    const mun = get().municipios.find(m => m.name === get().selectedMunicipio)
+    const dane = mun && mun.divipola !== 'REGIONAL' ? mun.divipola : ''
+    const merged = { ...get().ofertasExplorerParams, ...params }
+    set({ ofertasExplorerLoading: true, ofertasExplorerParams: merged })
+    const qs = new URLSearchParams()
+    if (dane) qs.set('dane_code', dane)
+    if (merged.search) qs.set('busqueda', merged.search)
+    if (merged.sector) qs.set('sector', merged.sector)
+    if (merged.fuente) qs.set('fuente', merged.fuente)
+    if (merged.tipo_contrato) qs.set('tipo_contrato', merged.tipo_contrato)
+    if (merged.modalidad) qs.set('modalidad', merged.modalidad)
+    qs.set('page', String(merged.page || 1))
+    qs.set('page_size', '25')
+    try {
+      const data = await safeFetch(`${API}/empleo/ofertas?${qs}`)
+      set({ ofertasExplorer: data, ofertasExplorerLoading: false })
+    } catch (e) {
+      console.error('fetchOfertasExplorer:', e)
+      set({ ofertasExplorerLoading: false })
+    }
+  },
+  fetchSectorMunicipioMatrix: async () => {
+    if (get().sectorMunicipioMatrix) return
+    try {
+      set({ sectorMunicipioMatrix: await safeFetch(`${API}/analytics/laboral/sector-municipio`) })
+    } catch (e) {
+      console.error('fetchSectorMunicipioMatrix:', e)
+    }
+  },
+  fetchOfertaDemanda: async () => {
+    if (get().ofertaDemandaData) return
+    try {
+      set({ ofertaDemandaData: await safeFetch(`${API}/analytics/laboral/oferta-demanda`) })
+    } catch (e) {
+      console.error('fetchOfertaDemanda:', e)
+    }
+  },
+  fetchEnrichmentData: async () => {
+    if (get().enrichmentData) return
+    const mun = get().municipios.find(m => m.name === get().selectedMunicipio)
+    const dp = mun && mun.divipola !== 'REGIONAL' ? `?dane_code=${mun.divipola}` : ''
+    try {
+      const [experiencia, contratos, educacion, modalidad] = await Promise.all([
+        safeFetch(`${API}/empleo/experiencia${dp}`),
+        safeFetch(`${API}/empleo/contratos${dp}`),
+        safeFetch(`${API}/empleo/educacion${dp}`),
+        safeFetch(`${API}/empleo/modalidad${dp}`),
+      ])
+      set({ enrichmentData: { experiencia, contratos, educacion, modalidad } })
+    } catch (e) {
+      console.error('fetchEnrichmentData:', e)
+      set((s) => ({ errors: { ...s.errors, enrichment: e.message } }))
     }
   },
   fetchBusinessDirectory: async (params = {}) => {
