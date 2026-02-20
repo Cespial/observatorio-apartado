@@ -163,7 +163,7 @@ def get_brecha_skills(dane_code: str = Query(None)):
         SELECT
             ROUND(AVG(punt_global)::numeric, 1) as icfes_promedio,
             COUNT(DISTINCT cole_nombre) as colegios,
-            SUM(estudiantes) as total_estudiantes
+            COUNT(*) as total_estudiantes
         FROM socioeconomico.icfes
         WHERE punt_global IS NOT NULL
     """)
