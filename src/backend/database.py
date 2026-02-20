@@ -21,7 +21,9 @@ engine = create_engine(
 SQLITE_DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../uraba_empleos/empleos_uraba.db"))
 
 def get_sqlite_conn():
-    """Returns a connection to the jobs SQLite database."""
+    """Returns a connection to the jobs SQLite database, or None if unavailable."""
+    if not os.path.exists(SQLITE_DB_PATH):
+        return None
     conn = sqlite3.connect(SQLITE_DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn

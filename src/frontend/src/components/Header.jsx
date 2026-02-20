@@ -5,6 +5,9 @@ export default function Header() {
   const toggleTheme = useStore((s) => s.toggleTheme)
   const showToast = useStore((s) => s.showToast)
   const catalogSummary = useStore((s) => s.catalogSummary)
+  const selectedMunicipio = useStore((s) => s.selectedMunicipio)
+  const municipios = useStore((s) => s.municipios)
+  const setSelectedMunicipio = useStore((s) => s.setSelectedMunicipio)
 
   return (
     <header
@@ -35,8 +38,8 @@ export default function Header() {
           <span style={{ fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Vista:</span>
           <div style={{ position: 'relative' }}>
             <select
-              value={useStore(s => s.selectedMunicipio)}
-              onChange={(e) => useStore.getState().setSelectedMunicipio(e.target.value)}
+              value={selectedMunicipio}
+              onChange={(e) => setSelectedMunicipio(e.target.value)}
               style={{
                 background: 'var(--bg-secondary)',
                 color: 'var(--text-primary)',
@@ -54,7 +57,7 @@ export default function Header() {
               onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
               onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
             >
-              {useStore.getState().municipios.map(m => (
+              {municipios.map(m => (
                 <option key={m.name} value={m.name}>{m.name}</option>
               ))}
             </select>

@@ -66,18 +66,15 @@ export default function GobiernoTab() {
   const mdmPos = desempeno?.find((r) => r.indicador === 'MDM - Posición')
   const mdmAvg = desempeno?.find((r) => r.indicador === 'Promedio MDM por grupo de DI')
 
-  // Gobierno Digital comparison - main index per year
-  const digitalByYear = {}
-  digital?.filter((r) => r.indice === 'Gobierno Digital').forEach((r) => {
-    if (!digitalByYear[r.anio]) {
-      digitalByYear[r.anio] = { anio: r.anio, apartado: 0, promedio: 0, max: 0, min: 0 }
-    }
-    digitalByYear[r.anio].apartado = Math.round(r.puntaje * 10) / 10
-    digitalByYear[r.anio].promedio = Math.round(r.promedio_grupo * 10) / 10
-    digitalByYear[r.anio].max = Math.round((r.m_ximo_grupo ?? 0) * 10) / 10
-    digitalByYear[r.anio].min = Math.round((r.m_nimo_grupo ?? 0) * 10) / 10
-  })
-  const digitalMain = Object.values(digitalByYear).sort((a, b) => a.anio - b.anio)
+  // Gobierno Digital - API returns {indicador, valor, anio, municipio} from TerriData
+  const digitalMain = digital
+    ?.filter((r) => r.valor != null)
+    .map((r) => ({
+      indicador: r.indicador?.length > 30 ? r.indicador.slice(0, 30) + '...' : r.indicador,
+      full: r.indicador,
+      valor: Math.round((r.valor ?? 0) * 10) / 10,
+      anio: r.anio,
+    })) || []
 
   // Poverty
   const ipm = pobreza?.terridata?.find((r) => r.indicador === 'Índice de pobreza multidimensional - IPM')
@@ -163,25 +160,22 @@ export default function GobiernoTab() {
         </>
       )}
 
-      {/* Gobierno Digital with benchmark range */}
+      {/* Gobierno Digital / TIC indicators */}
       {digitalMain.length > 0 && (
         <>
-          <h4 className="section-title" style={{ fontSize: 11, marginTop: 16 }}>Gobierno Digital — Apartado vs Grupo</h4>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={digitalMain}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
-              <XAxis dataKey="anio" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
-              <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} domain={[0, 100]} />
-              <Tooltip
-                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
-                labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
-              />
-              <Bar dataKey="apartado" fill="var(--accent-primary)" opacity={0.85} radius={[4, 4, 0, 0]} name="Apartado" />
-              <Bar dataKey="promedio" fill="var(--border)" opacity={0.6} radius={[4, 4, 0, 0]} name="Prom. Grupo" />
-            </BarChart>
-          </ResponsiveContainer>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="data-source">Fuente: MinTIC — Gobierno Digital via datos.gov.co</div>
+          <h4 className="section-title" style={{ fontSize: 11, marginTop: 16 }}>Gobierno Digital / TIC</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {digitalMain.map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--bg-card)', borderRadius: 6, border: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: 11 }} title={r.full}>{r.indicador}</span>
+                <span style={{ color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600 }}>
+                  {r.valor} <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 9 }}>({r.anio})</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+            <div className="data-source">Fuente: DNP — TerriData</div>
             <ExportCSVButton rows={digitalMain} filename="gobierno_digital.csv" />
           </div>
         </>

@@ -108,15 +108,16 @@ LAYERS_CATALOG = [
 @cached(ttl_seconds=600)
 def list_layers():
     """Listar todas las capas disponibles con conteo de registros."""
-    parts = [
-        f"SELECT '{layer['id']}' AS id, COUNT(*) AS cnt FROM {layer['schema']}.{layer['table']}"
-        for layer in LAYERS_CATALOG
-    ]
-    sql = " UNION ALL ".join(parts)
     counts = {}
     with engine.connect() as conn:
-        for row in conn.execute(text(sql)).fetchall():
-            counts[row[0]] = row[1]
+        for layer in LAYERS_CATALOG:
+            try:
+                cnt = conn.execute(
+                    text(f"SELECT COUNT(*) FROM {layer['schema']}.{layer['table']}")
+                ).scalar()
+                counts[layer["id"]] = cnt
+            except Exception:
+                counts[layer["id"]] = 0
     return [{**layer, "record_count": counts.get(layer["id"], 0)} for layer in LAYERS_CATALOG]
 
 
@@ -139,8 +140,8 @@ def get_layer_geojson(
     if dane_code:
         # Check if column exists in the catalog definition? No, we don't store columns there.
         # We'll just assume for standard tables.
-        if layer_id in ["limite_municipal", "manzanas_censales", "osm_edificaciones", 
-                        "osm_vias", "osm_uso_suelo", "osm_amenidades"]:
+        if layer_id in ["limite_municipal", "manzanas_censales", "veredas_mgn",
+                        "osm_edificaciones", "osm_vias", "osm_uso_suelo", "osm_amenidades"]:
             conditions.append("dane_code = :dane")
             params["dane"] = dane_code
     

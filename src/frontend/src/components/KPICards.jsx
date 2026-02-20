@@ -1,3 +1,5 @@
+import { useStore } from '../store'
+
 const CARDS = [
   { key: 'poblacion_total', label: 'Poblacion total', source: 'DANE', yearKey: 'poblacion_anio' },
   { key: 'manzanas_censales', label: 'Manzanas censales', source: 'MGN-DANE' },

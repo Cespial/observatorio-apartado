@@ -119,7 +119,7 @@ export default function SidePanel() {
 }
 
 function MiniSparkline({ data, width = 80, height = 24, color = 'var(--accent-primary)' }) {
-  if (!data?.length) return null
+  if (!data?.length || data.length < 2) return null
   const max = Math.max(...data)
   const min = Math.min(...data)
   const range = max - min || 1

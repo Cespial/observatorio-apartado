@@ -61,6 +61,8 @@ export const useStore = create((set, get) => ({
     { name: 'San Juan de Urabá', lat: 8.7592, lon: -76.5297, zoom: 13, divipola: '05659' },
     { name: 'Arboletes', lat: 8.8503, lon: -76.4269, zoom: 13, divipola: '05051' },
     { name: 'Mutatá', lat: 7.2453, lon: -76.4358, zoom: 13, divipola: '05480' },
+    { name: 'Murindó', lat: 6.8867, lon: -76.7533, zoom: 12, divipola: '05475' },
+    { name: 'Vigía del Fuerte', lat: 6.5892, lon: -76.8906, zoom: 12, divipola: '05873' },
     { name: 'Urabá (Regional)', lat: 8.2, lon: -76.6, zoom: 8.5, divipola: 'REGIONAL' },
   ],
 
@@ -85,8 +87,19 @@ export const useStore = create((set, get) => ({
       // Trigger refetch of geo layers for the new context
       const { fetchManzanas, fetchPlaces, fetchLayerGeoJSON, activeLayers } = get()
       
-      // Clear current layer data to avoid mixing (optional, or just overwrite)
-      set((s) => ({ layerData: {} }))
+      // Clear cached data so it refetches for the new municipality
+      set((s) => ({
+        layerData: {},
+        securityMatrix: null,
+        icfesData: null,
+        victimasData: null,
+        saludData: null,
+        economiaData: null,
+        gobiernoData: null,
+        culturaData: null,
+        crossvarVariables: null,
+        errors: {},
+      }))
 
       // Re-fetch standard layers
       fetchManzanas()

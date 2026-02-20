@@ -116,14 +116,8 @@ def get_google_places(
     params = {"lim": limit}
 
     if dane_code:
-        # Assuming google_places has a municipality column or spatial join is needed
-        # For now, adding the condition if column exists (it should based on ETL)
-        # But if not, we can relax this or rely on frontend viewport
-        # We'll assume the column is 'dane_code' or 'cod_mpio'
-        # Given ETLs usually standardizing on dane_code:
-        # conditions.append("dane_code = :dane")
-        # params["dane"] = dane_code
-        pass 
+        conditions.append("dane_code = :dane")
+        params["dane"] = dane_code
 
     if category:
         conditions.append("category = :cat")

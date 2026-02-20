@@ -1,7 +1,7 @@
 """
 Router para el mercado laboral y ofertas de empleo en Urabá
 """
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query
 from ..database import get_sqlite_conn, cached
 import pandas as pd
 
@@ -17,58 +17,53 @@ def get_ofertas(
 ):
     """Listado de ofertas laborales recolectadas por el scraper."""
     conn = get_sqlite_conn()
-    query = "SELECT * FROM ofertas WHERE 1=1"
-    params = []
-    
-    if municipio:
-        query += " AND municipio LIKE ?"
-        params.append(f"%{municipio}%")
-    if fuente:
-        query += " AND fuente = ?"
-        params.append(fuente)
-    if busqueda:
-        query += " AND (titulo LIKE ? OR descripcion LIKE ?)"
-        params.append(f"%{busqueda}%")
-        params.append(f"%{busqueda}%")
-    
-    query += " ORDER BY fecha_scraping DESC LIMIT ?"
-    params.append(limit)
-    
-    df = pd.read_sql_query(query, conn, params=params)
-    conn.close()
-    return df.to_dict(orient="records")
+    if conn is None:
+        return []
+    try:
+        query = "SELECT * FROM ofertas WHERE 1=1"
+        params = []
+        if municipio:
+            query += " AND municipio LIKE ?"
+            params.append(f"%{municipio}%")
+        if fuente:
+            query += " AND fuente = ?"
+            params.append(fuente)
+        if busqueda:
+            query += " AND (titulo LIKE ? OR descripcion LIKE ?)"
+            params.append(f"%{busqueda}%")
+            params.append(f"%{busqueda}%")
+        query += " ORDER BY fecha_scraping DESC LIMIT ?"
+        params.append(limit)
+        df = pd.read_sql_query(query, conn, params=params)
+        return df.to_dict(orient="records")
+    except Exception:
+        return []
+    finally:
+        conn.close()
 
 @router.get("/stats")
 @cached(ttl_seconds=3600)
 def get_empleo_stats():
     """Estadísticas rápidas del mercado laboral."""
     conn = get_sqlite_conn()
-    
-    # Ofertas por municipio
-    df_muni = pd.read_sql_query(
-        "SELECT municipio, COUNT(*) as total FROM ofertas GROUP BY municipio ORDER BY total DESC", 
-        conn
-    )
-    
-    # Ofertas por fuente
-    df_fuente = pd.read_sql_query(
-        "SELECT fuente, COUNT(*) as total FROM ofertas GROUP BY fuente ORDER BY total DESC", 
-        conn
-    )
-    
-    # Top empresas
-    df_empresa = pd.read_sql_query(
-        "SELECT empresa, COUNT(*) as total FROM ofertas WHERE empresa != 'No especificada' GROUP BY empresa ORDER BY total DESC LIMIT 10", 
-        conn
-    )
-    
-    conn.close()
-    
-    return {
-        "por_municipio": df_muni.to_dict(orient="records"),
-        "por_fuente": df_fuente.to_dict(orient="records"),
-        "top_empresas": df_empresa.to_dict(orient="records")
-    }
+    if conn is None:
+        return {"por_municipio": [], "por_fuente": [], "top_empresas": []}
+    try:
+        df_muni = pd.read_sql_query(
+            "SELECT municipio, COUNT(*) as total FROM ofertas GROUP BY municipio ORDER BY total DESC", conn)
+        df_fuente = pd.read_sql_query(
+            "SELECT fuente, COUNT(*) as total FROM ofertas GROUP BY fuente ORDER BY total DESC", conn)
+        df_empresa = pd.read_sql_query(
+            "SELECT empresa, COUNT(*) as total FROM ofertas WHERE empresa != 'No especificada' GROUP BY empresa ORDER BY total DESC LIMIT 10", conn)
+        return {
+            "por_municipio": df_muni.to_dict(orient="records"),
+            "por_fuente": df_fuente.to_dict(orient="records"),
+            "top_empresas": df_empresa.to_dict(orient="records")
+        }
+    except Exception:
+        return {"por_municipio": [], "por_fuente": [], "top_empresas": []}
+    finally:
+        conn.close()
 
 @router.get("/fuentes")
 def list_fuentes():

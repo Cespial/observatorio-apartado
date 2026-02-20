@@ -31,7 +31,6 @@ export default function IcfesChart() {
     .map((d) => ({
       periodo: d.periodo,
       global: Math.round(d.prom_global),
-      matematicas: Math.round(d.prom_matematicas || 0),
       estudiantes: d.estudiantes,
     }))
 
@@ -63,8 +62,7 @@ export default function IcfesChart() {
             contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
             labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
           />
-          <Bar dataKey="global" fill="#0050B3" opacity={0.9} radius={[4, 4, 0, 0]} name="Global" />
-          <Bar dataKey="matematicas" fill="#40A9FF" opacity={0.8} radius={[4, 4, 0, 0]} name="Matematicas" />
+          <Bar dataKey="global" fill="#0050B3" opacity={0.9} radius={[4, 4, 0, 0]} name="Prom. Global" />
         </BarChart>
       </ResponsiveContainer>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>

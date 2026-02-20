@@ -6,25 +6,23 @@ import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers'
 import { HeatmapLayer } from '@deck.gl/aggregation-layers'
 import { useStore } from '../store'
 
-const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
+// Free basemaps compatible with MapLibre (no token required)
+const MAP_STYLES = {
+  light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+}
+const MAP_STYLE = MAP_STYLES.light
 
 const CATEGORY_COLORS = {
-  'Restaurantes': [250, 140, 22],
-  'Bancos': [0, 80, 179],
-  'Farmacias': [82, 196, 26],
-  'Hospitales': [245, 34, 45],
-  'Colegios': [24, 144, 255],
-  'Supermercados': [64, 169, 255],
-  'Tiendas': [105, 192, 255],
-  'Iglesias': [140, 140, 140],
-  'Hoteles': [250, 140, 22],
-  'Caféterías': [160, 120, 60],
-  'Bares': [207, 19, 34],
-  'Panaderías': [212, 107, 8],
-  'Ferreterías': [89, 89, 89],
-  'Talleres mecánicos': [89, 89, 89],
-  'Salones de belleza': [194, 84, 148],
+  'school': [24, 144, 255],
+  'pharmacy': [82, 196, 26],
+  'bank': [0, 80, 179],
+  'supermarket': [64, 169, 255],
+  'gas_station': [250, 140, 22],
+  'hospital': [245, 34, 45],
+  'local_government_office': [140, 140, 140],
+  'atm': [105, 192, 255],
+  'police': [207, 19, 34],
 }
 
 const DEFAULT_COLOR = [24, 144, 255]
@@ -205,7 +203,7 @@ export default function MapView() {
     }
 
     return result
-  }, [activeLayers, layerData, selectedCategory])
+  }, [activeLayers, layerData, selectedCategory, viewState.zoom])
 
   const onClick = useCallback((info) => {
     if (!info.object) { setPopup(null); return }
@@ -241,7 +239,6 @@ export default function MapView() {
       >
         <Map
           mapStyle={MAP_STYLE}
-          mapboxAccessToken={MAPBOX_TOKEN}
           reuseMaps
         />
       </DeckGL>

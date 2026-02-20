@@ -19,7 +19,7 @@ function getCorrelationLabel(r) {
 }
 
 export default function CrossvarScatter() {
-  const { crossvarData, fetchCrossvar, crossvarVariables, fetchCrossvarVariables } = useStore()
+  const { crossvarData, fetchCrossvar, crossvarVariables, fetchCrossvarVariables, errors } = useStore()
   const [varX, setVarX] = useState('homicidios_anual')
   const [varY, setVarY] = useState('hurtos_anual')
 
@@ -97,6 +97,8 @@ export default function CrossvarScatter() {
             <Scatter data={crossvarData.points} fill="var(--accent-primary)" fillOpacity={0.75} r={5} />
           </ScatterChart>
         </ResponsiveContainer>
+      ) : errors?.cruces ? (
+        <div style={{ color: 'var(--semantic-negative)', padding: 16, fontSize: 12 }}>Error: {errors.cruces}</div>
       ) : (
         <div style={{ color: 'var(--text-muted)', padding: 16 }}>Cargando...</div>
       )}

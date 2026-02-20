@@ -40,22 +40,23 @@ export default function SaludTab() {
     return { ...k, value: row?.dato_numerico, anio: row?.anio }
   }).filter((k) => k.value != null)
 
-  // IRCA chart
+  // IRCA chart - API returns {anio, irca_total, municipio}
   const ircaChart = irca
     ?.filter((r) => r.irca_total != null)
     .map((r) => ({
       anio: r.anio,
-      urbano: r.irca_urbano,
-      rural: r.irca_rural,
       total: r.irca_total,
     })) || []
 
-  // Top Sivigila events
-  const sivigilaTop = sivigila?.slice(0, 8).map((r) => ({
-    evento: r.evento?.length > 28 ? r.evento.slice(0, 28) + '...' : r.evento,
-    full: r.evento,
-    casos: r.total_casos,
-  })) || []
+  // Top Sivigila health indicators - API returns {indicador, valor, anio, municipio}
+  const sivigilaTop = sivigila
+    ?.filter((r) => r.indicador && r.valor != null)
+    .slice(0, 8)
+    .map((r) => ({
+      evento: r.indicador?.length > 28 ? r.indicador.slice(0, 28) + '...' : r.indicador,
+      full: r.indicador,
+      casos: r.valor,
+    })) || []
 
   const SIVIGILA_COLORS = ['#0050B3', '#1890FF', '#40A9FF', '#69C0FF', '#91D5FF', '#B7DCFF', '#D6EBFF', '#E6F4FF']
 
@@ -90,9 +91,7 @@ export default function SaludTab() {
                 contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
                 labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
               />
-              <Line type="monotone" dataKey="urbano" stroke="#0050B3" strokeWidth={2} dot={{ r: 3 }} name="Urbano" />
-              <Line type="monotone" dataKey="rural" stroke="#FA8C16" strokeWidth={2} dot={{ r: 3 }} name="Rural" connectNulls />
-              <Line type="monotone" dataKey="total" stroke="#52C41A" strokeWidth={2} dot={{ r: 3 }} name="Total" />
+              <Line type="monotone" dataKey="total" stroke="#0050B3" strokeWidth={2} dot={{ r: 3 }} name="IRCA Total" />
             </LineChart>
           </ResponsiveContainer>
           <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 4, fontStyle: 'italic' }}>

@@ -38,15 +38,15 @@ export default function EconomiaTab() {
     .filter(Boolean)
     .sort((a, b) => b.pct - a.pct)
 
-  // SECOP top 5 contract types
+  // Public finance / investment data from TerriData
   const secopTop = secop
-    ?.filter((r) => r.tipo_de_contrato)
+    ?.filter((r) => r.indicador && r.valor != null)
     .slice(0, 6)
     .map((r) => ({
-      tipo: r.tipo_de_contrato?.length > 20 ? r.tipo_de_contrato.slice(0, 20) + '...' : r.tipo_de_contrato,
-      full: r.tipo_de_contrato,
-      contratos: r.contratos,
-      valor: Math.round((r.valor_total || 0) / 1e6),
+      tipo: r.indicador?.length > 30 ? r.indicador.slice(0, 30) + '...' : r.indicador,
+      full: r.indicador,
+      valor: r.valor,
+      anio: r.anio,
     })) || []
 
   // Turismo
@@ -112,26 +112,26 @@ export default function EconomiaTab() {
         </>
       )}
 
-      {/* SECOP Contracts */}
+      {/* Public Finance / Investment */}
       {secopTop.length > 0 && (
         <>
-          <h4 className="section-title" style={{ fontSize: 11, marginTop: 16 }}>Contratacion Publica (SECOP)</h4>
+          <h4 className="section-title" style={{ fontSize: 11, marginTop: 16 }}>Inversion Publica</h4>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={secopTop} layout="vertical" margin={{ left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
               <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
-              <YAxis dataKey="tipo" type="category" tick={{ fill: 'var(--text-secondary)', fontSize: 8 }} width={110} />
+              <YAxis dataKey="tipo" type="category" tick={{ fill: 'var(--text-secondary)', fontSize: 8 }} width={130} />
               <Tooltip
                 contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}
-                formatter={(v, name) => [v.toLocaleString('es-CO'), name === 'contratos' ? 'Contratos' : 'Valor (M COP)']}
+                formatter={(v) => [typeof v === 'number' ? v.toLocaleString('es-CO') : v, 'Valor']}
                 labelFormatter={(l, payload) => payload?.[0]?.payload?.full || l}
               />
-              <Bar dataKey="contratos" fill="#0050B3" opacity={0.85} radius={[0, 4, 4, 0]} name="contratos" />
+              <Bar dataKey="valor" fill="#0050B3" opacity={0.85} radius={[0, 4, 4, 0]} name="valor" />
             </BarChart>
           </ResponsiveContainer>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="data-source">Fuente: SECOP II — datos.gov.co ({secop.reduce((s, r) => s + r.contratos, 0).toLocaleString('es-CO')} contratos)</div>
-            <ExportCSVButton rows={secopTop} filename="economia_secop.csv" />
+            <div className="data-source">Fuente: DNP — TerriData ({secopTop[0]?.anio})</div>
+            <ExportCSVButton rows={secopTop} filename="economia_inversion.csv" />
           </div>
         </>
       )}
