@@ -64,6 +64,29 @@ def query_dicts(sql: str, params: dict = None) -> list[dict]:
             return [dict(zip(columns, row)) for row in result.fetchall()]
         return []
 
+
+def query_dicts_batch(queries: list[tuple[str, dict | None]]) -> list[list[dict]]:
+    """Execute multiple SQL queries on a single connection, returning a list of results.
+
+    Each item in *queries* is a (sql, params) tuple.
+    Returns a list of list[dict] in the same order.
+    This avoids opening multiple connections from the pool, which can
+    exhaust Vercel serverless connection limits.
+    """
+    results: list[list[dict]] = []
+    with engine.connect() as conn:
+        for sql, params in queries:
+            try:
+                result = conn.execute(text(sql), params or {})
+                if result.returns_rows:
+                    columns = list(result.keys())
+                    results.append([dict(zip(columns, row)) for row in result.fetchall()])
+                else:
+                    results.append([])
+            except Exception:
+                results.append([])
+    return results
+
 def query_geojson(sql: str, params: dict = None, geom_col: str = "geom") -> dict:
     """Execute SQL and return a GeoJSON FeatureCollection built server-side
     by PostGIS. *geom_col* must match the geometry column name in the query."""

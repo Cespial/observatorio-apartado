@@ -53,7 +53,7 @@ class TestTermometro:
 
 class TestOfertaDemanda:
     def test_oferta_demanda(self, client, mock_query_dicts):
-        mock_query_dicts.side_effect = [
+        mock_query_dicts.batch.return_value = [
             [{"municipio": "Apartadó", "dane_code": "05045", "vacantes": 50}],
             [{"dane_code": "05045", "municipio": "Apartadó", "poblacion": 200000, "anio": 2023}],
         ]
@@ -66,7 +66,7 @@ class TestOfertaDemanda:
 
 class TestBrechaSkills:
     def test_brecha_skills(self, client, mock_query_dicts):
-        mock_query_dicts.side_effect = [
+        mock_query_dicts.batch.return_value = [
             [{"skill": "Excel", "demanda": 30}, {"skill": "Ventas", "demanda": 20}],
             [{"sector": "Agroindustria", "ofertas": 50, "empresas": 10}],
             [{"icfes_promedio": 240.5, "colegios": 15, "total_estudiantes": 1200}],
@@ -113,7 +113,7 @@ class TestSectorMunicipio:
 
 class TestCadenasProductivas:
     def test_cadenas_returns_list(self, client, mock_query_dicts):
-        mock_query_dicts.side_effect = [
+        mock_query_dicts.batch.return_value = [
             # sector_data
             [
                 {"sector": "Agroindustria", "municipio": "Apartadó", "ofertas": 40,
@@ -144,7 +144,7 @@ class TestCadenasProductivas:
         assert "municipios" in first
 
     def test_cadenas_empty_data(self, client, mock_query_dicts):
-        mock_query_dicts.return_value = []
+        mock_query_dicts.batch.return_value = [[], []]
         resp = client.get("/api/analytics/laboral/cadenas-productivas")
         assert resp.status_code == 200
         data = resp.json()
@@ -153,7 +153,7 @@ class TestCadenasProductivas:
 
 class TestEstacionalidad:
     def test_estacionalidad_returns_profile(self, client, mock_query_dicts):
-        mock_query_dicts.side_effect = [
+        mock_query_dicts.batch.return_value = [
             # sector × month data
             [
                 {"mes": 1, "sector": "Agroindustria", "ofertas": 20, "salario_promedio": 1500000},
@@ -179,7 +179,7 @@ class TestEstacionalidad:
             assert "mes_nombre" in m
 
     def test_estacionalidad_empty(self, client, mock_query_dicts):
-        mock_query_dicts.return_value = []
+        mock_query_dicts.batch.return_value = [[], []]
         resp = client.get("/api/analytics/laboral/estacionalidad")
         assert resp.status_code == 200
         data = resp.json()
@@ -189,7 +189,7 @@ class TestEstacionalidad:
 
 class TestInformalidad:
     def test_informalidad_returns_ranking(self, client, mock_query_dicts):
-        mock_query_dicts.side_effect = [
+        mock_query_dicts.batch.return_value = [
             # IPM data
             [{"municipio": "Apartadó", "dane_code": "05045", "tasa_ipm": 65.2}],
             # Proxy data
@@ -211,7 +211,7 @@ class TestInformalidad:
         assert item["indice_compuesto"] is not None
 
     def test_informalidad_empty(self, client, mock_query_dicts):
-        mock_query_dicts.return_value = []
+        mock_query_dicts.batch.return_value = [[], [], []]
         resp = client.get("/api/analytics/laboral/informalidad")
         assert resp.status_code == 200
         assert resp.json() == []
@@ -219,7 +219,7 @@ class TestInformalidad:
 
 class TestSalarioImputado:
     def test_salario_imputado_returns_cobertura(self, client, mock_query_dicts):
-        mock_query_dicts.side_effect = [
+        mock_query_dicts.batch.return_value = [
             # Reference table
             [
                 {"sector": "Agroindustria", "municipio": "Apartadó",

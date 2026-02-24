@@ -16,10 +16,15 @@ os.environ["RATE_LIMIT_BPS"] = "10000"
 
 @pytest.fixture()
 def mock_query_dicts():
-    """Patch query_dicts everywhere it's imported."""
+    """Patch query_dicts and query_dicts_batch everywhere they're imported."""
     with patch("src.backend.database.query_dicts") as db_mock, \
          patch("src.backend.routers.empleo.query_dicts", db_mock), \
-         patch("src.backend.routers.analytics.query_dicts", db_mock):
+         patch("src.backend.routers.analytics.query_dicts", db_mock), \
+         patch("src.backend.database.query_dicts_batch") as batch_mock, \
+         patch("src.backend.routers.analytics.query_dicts_batch", batch_mock):
+        # Expose both mocks via the fixture; tests that only need query_dicts
+        # can use it as before. Tests needing batch can access .batch.
+        db_mock.batch = batch_mock
         yield db_mock
 
 

@@ -2,7 +2,7 @@
 Módulo de Analítica Avanzada — Inteligencia Territorial y Laboral para Urabá
 """
 from fastapi import APIRouter, Query, HTTPException
-from ..database import cached, query_dicts
+from ..database import cached, query_dicts, query_dicts_batch
 
 router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
 
@@ -97,21 +97,22 @@ def get_termometro_laboral():
 @cached(ttl_seconds=3600)
 def get_oferta_demanda():
     """Oferta laboral vs demanda potencial (población)."""
-    ofertas = query_dicts("""
-        SELECT municipio, dane_code, COUNT(*) as vacantes
-        FROM empleo.ofertas_laborales
-        WHERE dane_code IS NOT NULL
-        GROUP BY municipio, dane_code
-        ORDER BY vacantes DESC
-    """)
-
-    poblacion = query_dicts("""
-        SELECT DISTINCT ON (dane_code)
-            dane_code, entidad as municipio, dato_numerico as poblacion, anio
-        FROM socioeconomico.terridata
-        WHERE indicador = :ind
-        ORDER BY dane_code, anio DESC
-    """, {"ind": "Población total"})
+    ofertas, poblacion = query_dicts_batch([
+        ("""
+            SELECT municipio, dane_code, COUNT(*) as vacantes
+            FROM empleo.ofertas_laborales
+            WHERE dane_code IS NOT NULL
+            GROUP BY municipio, dane_code
+            ORDER BY vacantes DESC
+        """, None),
+        ("""
+            SELECT DISTINCT ON (dane_code)
+                dane_code, entidad as municipio, dato_numerico as poblacion, anio
+            FROM socioeconomico.terridata
+            WHERE indicador = :ind
+            ORDER BY dane_code, anio DESC
+        """, {"ind": "Población total"}),
+    ])
 
     # Build lookup
     pop_map = {p["dane_code"]: p for p in poblacion}
@@ -142,33 +143,33 @@ def get_brecha_skills(dane_code: str = Query(None)):
 
     where = " AND ".join(conditions)
 
-    # Use query_dicts for short-lived connections (Supabase transaction pooler)
-    skills = query_dicts(f"""
-        SELECT skill, COUNT(*) as demanda
-        FROM empleo.ofertas_laborales, UNNEST(skills) AS skill
-        WHERE {where}
-        GROUP BY skill
-        ORDER BY demanda DESC
-        LIMIT 20
-    """, params)
-
-    sectores = query_dicts(f"""
-        SELECT sector, COUNT(*) as ofertas,
-               COUNT(DISTINCT empresa) as empresas
-        FROM empleo.ofertas_laborales
-        WHERE {where}
-        GROUP BY sector
-        ORDER BY ofertas DESC
-    """, params)
-
-    edu = query_dicts("""
-        SELECT
-            ROUND(AVG(punt_global)::numeric, 1) as icfes_promedio,
-            COUNT(DISTINCT cole_nombre) as colegios,
-            COUNT(*) as total_estudiantes
-        FROM socioeconomico.icfes
-        WHERE punt_global IS NOT NULL
-    """)
+    # Run all 3 queries on a single connection
+    skills, sectores, edu = query_dicts_batch([
+        (f"""
+            SELECT skill, COUNT(*) as demanda
+            FROM empleo.ofertas_laborales, UNNEST(skills) AS skill
+            WHERE {where}
+            GROUP BY skill
+            ORDER BY demanda DESC
+            LIMIT 20
+        """, params),
+        (f"""
+            SELECT sector, COUNT(*) as ofertas,
+                   COUNT(DISTINCT empresa) as empresas
+            FROM empleo.ofertas_laborales
+            WHERE {where}
+            GROUP BY sector
+            ORDER BY ofertas DESC
+        """, params),
+        ("""
+            SELECT
+                ROUND(AVG(punt_global)::numeric, 1) as icfes_promedio,
+                COUNT(DISTINCT cole_nombre) as colegios,
+                COUNT(*) as total_estudiantes
+            FROM socioeconomico.icfes
+            WHERE punt_global IS NOT NULL
+        """, None),
+    ])
     edu_row = edu[0] if edu else {}
 
     total_demanda = sum(s["demanda"] for s in skills)
@@ -361,24 +362,24 @@ def get_cadenas_productivas():
         },
     }
 
-    # Fetch base data: ofertas grouped by sector
-    sector_data = query_dicts("""
-        SELECT sector, municipio, COUNT(*) as ofertas,
-               COUNT(DISTINCT empresa) as empresas,
-               ROUND(AVG(salario_numerico)) as salario_promedio
-        FROM empleo.ofertas_laborales
-        WHERE sector IS NOT NULL
-        GROUP BY sector, municipio
-    """)
-
-    # Fetch top skills per sector
-    skills_data = query_dicts("""
-        SELECT sector, skill, COUNT(*) as demanda
-        FROM empleo.ofertas_laborales, UNNEST(skills) AS skill
-        WHERE sector IS NOT NULL
-        GROUP BY sector, skill
-        ORDER BY sector, demanda DESC
-    """)
+    # Fetch both queries on a single connection
+    sector_data, skills_data = query_dicts_batch([
+        ("""
+            SELECT sector, municipio, COUNT(*) as ofertas,
+                   COUNT(DISTINCT empresa) as empresas,
+                   ROUND(AVG(salario_numerico)) as salario_promedio
+            FROM empleo.ofertas_laborales
+            WHERE sector IS NOT NULL
+            GROUP BY sector, municipio
+        """, None),
+        ("""
+            SELECT sector, skill, COUNT(*) as demanda
+            FROM empleo.ofertas_laborales, UNNEST(skills) AS skill
+            WHERE sector IS NOT NULL
+            GROUP BY sector, skill
+            ORDER BY sector, demanda DESC
+        """, None),
+    ])
 
     # Build sector→skills lookup
     sector_skills = {}
@@ -445,28 +446,27 @@ def get_cadenas_productivas():
 @cached(ttl_seconds=3600)
 def get_estacionalidad_laboral():
     """Perfil estacional: ofertas y salario promedio por mes del año (1-12) y sector."""
-    sql = """
-        SELECT EXTRACT(MONTH FROM fecha_publicacion)::int as mes,
-               sector, COUNT(*) as ofertas,
-               ROUND(AVG(salario_numerico)) as salario_promedio
-        FROM empleo.ofertas_laborales
-        WHERE fecha_publicacion IS NOT NULL
-        GROUP BY mes, sector
-        ORDER BY mes, ofertas DESC
-    """
-    rows = query_dicts(sql)
-
-    # Also compute general monthly profile
-    general_sql = """
-        SELECT EXTRACT(MONTH FROM fecha_publicacion)::int as mes,
-               COUNT(*) as ofertas,
-               ROUND(AVG(salario_numerico)) as salario_promedio
-        FROM empleo.ofertas_laborales
-        WHERE fecha_publicacion IS NOT NULL
-        GROUP BY mes
-        ORDER BY mes
-    """
-    general = query_dicts(general_sql)
+    # Run both queries on a single connection
+    rows, general = query_dicts_batch([
+        ("""
+            SELECT EXTRACT(MONTH FROM fecha_publicacion)::int as mes,
+                   sector, COUNT(*) as ofertas,
+                   ROUND(AVG(salario_numerico)) as salario_promedio
+            FROM empleo.ofertas_laborales
+            WHERE fecha_publicacion IS NOT NULL
+            GROUP BY mes, sector
+            ORDER BY mes, ofertas DESC
+        """, None),
+        ("""
+            SELECT EXTRACT(MONTH FROM fecha_publicacion)::int as mes,
+                   COUNT(*) as ofertas,
+                   ROUND(AVG(salario_numerico)) as salario_promedio
+            FROM empleo.ofertas_laborales
+            WHERE fecha_publicacion IS NOT NULL
+            GROUP BY mes
+            ORDER BY mes
+        """, None),
+    ])
 
     # Compute average to detect peaks and valleys
     total_ofertas = sum(r["ofertas"] for r in general)
@@ -523,32 +523,33 @@ def get_estacionalidad_laboral():
 @cached(ttl_seconds=3600)
 def get_informalidad_laboral():
     """Indicador de informalidad laboral por municipio combinando IPM, ofertas y TerriData."""
-    # 1. IPM: empleo_informal
-    ipm_data = query_dicts("""
-        SELECT municipio, dane_code, empleo_informal as tasa_ipm
-        FROM socioeconomico.ipm
-        WHERE empleo_informal IS NOT NULL
-        ORDER BY empleo_informal DESC
-    """)
-
-    # 2. Proxy from ofertas: % contratos no-indefinidos
-    proxy_data = query_dicts("""
-        SELECT municipio, dane_code,
-               COUNT(*) as total_ofertas,
-               COUNT(CASE WHEN tipo_contrato IN ('Prestacion de servicios', 'Obra o labor') THEN 1 END) as no_indefinido,
-               COUNT(CASE WHEN tipo_contrato = 'Indefinido' THEN 1 END) as indefinido
-        FROM empleo.ofertas_laborales
-        WHERE tipo_contrato IS NOT NULL AND dane_code IS NOT NULL
-        GROUP BY municipio, dane_code
-    """)
-
-    # 3. Pobreza monetaria from TerriData
-    pobreza_data = query_dicts("""
-        SELECT DISTINCT ON (dane_code) dane_code, dato_numerico as pobreza_monetaria, anio
-        FROM socioeconomico.terridata
-        WHERE indicador = 'Incidencia de la pobreza monetaria'
-        ORDER BY dane_code, anio DESC
-    """)
+    # Run all 3 queries on a single DB connection to avoid pool exhaustion on Vercel
+    ipm_data, proxy_data, pobreza_data = query_dicts_batch([
+        # 1. IPM: empleo_informal
+        ("""
+            SELECT municipio, dane_code, empleo_informal as tasa_ipm
+            FROM socioeconomico.ipm
+            WHERE empleo_informal IS NOT NULL
+            ORDER BY empleo_informal DESC
+        """, None),
+        # 2. Proxy from ofertas: % contratos no-indefinidos
+        ("""
+            SELECT municipio, dane_code,
+                   COUNT(*) as total_ofertas,
+                   COUNT(CASE WHEN tipo_contrato IN ('Prestacion de servicios', 'Obra o labor') THEN 1 END) as no_indefinido,
+                   COUNT(CASE WHEN tipo_contrato = 'Indefinido' THEN 1 END) as indefinido
+            FROM empleo.ofertas_laborales
+            WHERE tipo_contrato IS NOT NULL AND dane_code IS NOT NULL
+            GROUP BY municipio, dane_code
+        """, None),
+        # 3. Pobreza monetaria from TerriData
+        ("""
+            SELECT DISTINCT ON (dane_code) dane_code, dato_numerico as pobreza_monetaria, anio
+            FROM socioeconomico.terridata
+            WHERE indicador = 'Incidencia de la pobreza monetaria'
+            ORDER BY dane_code, anio DESC
+        """, None),
+    ])
 
     # Build lookups
     ipm_map = {r["dane_code"]: r for r in ipm_data}
@@ -604,34 +605,27 @@ def get_informalidad_laboral():
 @cached(ttl_seconds=3600)
 def get_salario_imputado():
     """Tabla de referencia salarial y estadísticas de imputación."""
-    referencia = query_dicts("""
-        SELECT sector, municipio, nivel_educativo, nivel_experiencia,
-               ROUND(AVG(salario_numerico)) as salario_estimado,
-               COUNT(*) as muestra,
-               PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salario_numerico) as mediana
-        FROM empleo.ofertas_laborales
-        WHERE salario_numerico IS NOT NULL
-        GROUP BY sector, municipio, nivel_educativo, nivel_experiencia
-        HAVING COUNT(*) >= 3
-    """)
-
-    try:
-        cobertura = query_dicts("""
+    # Run both queries on a single DB connection to avoid pool exhaustion on Vercel.
+    # Use a safe cobertura query that handles missing salario_imputado column gracefully.
+    referencia, cobertura = query_dicts_batch([
+        ("""
+            SELECT sector, municipio, nivel_educativo, nivel_experiencia,
+                   ROUND(AVG(salario_numerico)) as salario_estimado,
+                   COUNT(*) as muestra,
+                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salario_numerico) as mediana
+            FROM empleo.ofertas_laborales
+            WHERE salario_numerico IS NOT NULL
+            GROUP BY sector, municipio, nivel_educativo, nivel_experiencia
+            HAVING COUNT(*) >= 3
+        """, None),
+        ("""
             SELECT
                 COUNT(*) as total,
                 COUNT(CASE WHEN salario_numerico IS NOT NULL THEN 1 END) as con_salario,
                 COUNT(CASE WHEN salario_imputado IS NOT NULL THEN 1 END) as con_imputado
             FROM empleo.ofertas_laborales
-        """)
-    except Exception:
-        # salario_imputado column may not exist yet (ETL 16 not run)
-        cobertura = query_dicts("""
-            SELECT
-                COUNT(*) as total,
-                COUNT(CASE WHEN salario_numerico IS NOT NULL THEN 1 END) as con_salario,
-                0 as con_imputado
-            FROM empleo.ofertas_laborales
-        """)
+        """, None),
+    ])
 
     cob = cobertura[0] if cobertura else {}
     total = cob.get("total", 0)
