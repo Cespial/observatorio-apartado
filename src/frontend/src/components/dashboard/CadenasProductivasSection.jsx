@@ -2,7 +2,7 @@ import DashboardCard from './DashboardCard'
 import { ExportCSVButton } from '../Skeleton'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, Treemap,
+  ResponsiveContainer, Cell,
 } from 'recharts'
 
 const CADENA_COLORS = {

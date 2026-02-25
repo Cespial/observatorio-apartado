@@ -55,6 +55,33 @@ LAYERS_CATALOG = [
         "geometry_type": "Point",
         "category": "economia",
     },
+    {
+        "id": "osm_vias",
+        "name": "Red Vial (OpenStreetMap)",
+        "schema": "cartografia",
+        "table": "osm_vias",
+        "description": "Red vial de Urabá extraída de OpenStreetMap",
+        "geometry_type": "LineString",
+        "category": "cartografia",
+    },
+    {
+        "id": "osm_edificaciones",
+        "name": "Edificaciones (OpenStreetMap)",
+        "schema": "cartografia",
+        "table": "osm_edificaciones",
+        "description": "Edificaciones de Urabá extraídas de OpenStreetMap",
+        "geometry_type": "Polygon",
+        "category": "cartografia",
+    },
+    {
+        "id": "osm_amenidades",
+        "name": "Amenidades (OpenStreetMap)",
+        "schema": "cartografia",
+        "table": "osm_amenidades",
+        "description": "Amenidades y servicios de Urabá extraídos de OpenStreetMap",
+        "geometry_type": "Point",
+        "category": "cartografia",
+    },
 ]
 
 
@@ -92,9 +119,11 @@ def get_layer_geojson(
     
     # Try to filter by dane_code if the table likely has it
     if dane_code:
-        # Check if column exists in the catalog definition? No, we don't store columns there.
-        # We'll just assume for standard tables.
-        if layer_id in ["manzanas_censales", "veredas_mgn"]:
+        if layer_id == "manzanas_censales":
+            conditions.append("cod_dane_municipio = :dane")
+            params["dane"] = dane_code
+        elif layer_id in ["veredas_mgn", "osm_vias", "osm_edificaciones",
+                          "osm_amenidades", "google_places"]:
             conditions.append("dane_code = :dane")
             params["dane"] = dane_code
     

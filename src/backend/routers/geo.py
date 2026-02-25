@@ -2,7 +2,7 @@
 Endpoints geoespaciales — manzanas con datos, heatmaps, filtros espaciales
 """
 import math
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from ..database import engine, query_dicts, query_geojson
 from sqlalchemy import text
 
@@ -34,7 +34,10 @@ def get_manzanas(
           AND CAST(total_personas AS INT) <= :max_pop
         LIMIT :lim
     """
-    return query_geojson(sql, params)
+    try:
+        return query_geojson(sql, params)
+    except Exception:
+        return {"type": "FeatureCollection", "features": []}
 
 
 @router.get("/edificaciones")
