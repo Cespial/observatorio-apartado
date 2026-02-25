@@ -13,12 +13,12 @@ export default function InsightsBar({ empleoKpis, empleoData, enrichmentData }) 
       const top = sectores[0]
       const total = kpis?.total_ofertas || stats?.total_ofertas || 0
       const pct = total > 0 ? Math.round((top.ofertas / total) * 100) : 0
-      items.push(`El sector con mas demanda es ${top.sector} con ${top.ofertas} ofertas (${pct}%)`)
+      items.push({ icon: '\uD83C\uDFE2', text: `El sector con mas demanda es ${top.sector} con ${top.ofertas} ofertas (${pct}%)`, type: 'sector' })
     }
 
     // Top skill
     if (skills?.length > 0) {
-      items.push(`${skills[0].skill} es la habilidad mas solicitada, aparece en ${skills[0].demanda} ofertas`)
+      items.push({ icon: '\u26A1', text: `${skills[0].skill} es la habilidad mas solicitada, aparece en ${skills[0].demanda} ofertas`, type: 'skill' })
     }
 
     // Salary coverage
@@ -28,7 +28,7 @@ export default function InsightsBar({ empleoKpis, empleoData, enrichmentData }) 
       if (total > 0) {
         const sinPct = Math.round(((total - conSalario) / total) * 100)
         if (sinPct > 30) {
-          items.push(`El ${sinPct}% de las ofertas no publican salario`)
+          items.push({ icon: '\uD83D\uDCB0', text: `El ${sinPct}% de las ofertas no publican salario`, type: 'salary' })
         }
       }
     }
@@ -39,7 +39,7 @@ export default function InsightsBar({ empleoKpis, empleoData, enrichmentData }) 
       const total = kpis?.total_ofertas || stats.total_ofertas || 0
       const pct = total > 0 ? Math.round((top.total / total) * 100) : 0
       if (pct > 30) {
-        items.push(`${top.municipio} concentra el ${pct}% de las vacantes de la region`)
+        items.push({ icon: '\uD83D\uDCCD', text: `${top.municipio} concentra el ${pct}% de las vacantes de la region`, type: 'geo' })
       }
     }
 
@@ -52,7 +52,7 @@ export default function InsightsBar({ empleoKpis, empleoData, enrichmentData }) 
       if (totalExp > 0) {
         const pct = Math.round((conExp / totalExp) * 100)
         if (pct > 40) {
-          items.push(`El ${pct}% de ofertas requieren experiencia de 1+ anos`)
+          items.push({ icon: '\uD83C\uDFAF', text: `El ${pct}% de ofertas requieren experiencia de 1+ anos`, type: 'experience' })
         }
       }
     }
@@ -64,7 +64,7 @@ export default function InsightsBar({ empleoKpis, empleoData, enrichmentData }) 
       if (presencial && total > 0) {
         const pct = Math.round((presencial.total / total) * 100)
         if (pct > 50) {
-          items.push(`El ${pct}% de las ofertas son presenciales`)
+          items.push({ icon: '\uD83C\uDFE0', text: `El ${pct}% de las ofertas son presenciales`, type: 'modality' })
         }
       }
     }
@@ -80,14 +80,18 @@ export default function InsightsBar({ empleoKpis, empleoData, enrichmentData }) 
         Insights automaticos
       </div>
       <div className="insights-bar">
-        {insights.map((text, i) => (
+        {insights.map((item, i) => (
           <div
             key={i}
             className="insight-chip"
             style={{ animationDelay: `${i * 100}ms` }}
           >
-            <span style={{ marginRight: 6 }}>&#x1f4ca;</span>
-            {text}
+            <span style={{ marginRight: 6 }}>{item.icon}</span>
+            {item.text.split(/(\d+%?)/g).map((part, j) =>
+              /^\d+%?$/.test(part)
+                ? <strong key={j} style={{ color: 'var(--accent-primary)' }}>{part}</strong>
+                : part
+            )}
           </div>
         ))}
       </div>

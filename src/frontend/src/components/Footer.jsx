@@ -1,4 +1,6 @@
 export default function Footer() {
+  const sources = ['ComputTrabajo', 'elempleo', 'Indeed', 'Comfama', 'LinkedIn', 'DANE', 'DNP-TerriData', 'ICFES', 'Google Places']
+
   return (
     <footer
       style={{
@@ -11,14 +13,19 @@ export default function Footer() {
         padding: '0 24px',
         flexShrink: 0,
         fontSize: 11,
-        color: 'var(--text-muted)',
+        color: 'var(--text-secondary)',
       }}
     >
       <div>
-        Fuentes: ComputTrabajo, elempleo, Indeed, Comfama, LinkedIn, DANE, DNP-TerriData, ICFES, Google Places
+        <span style={{ fontWeight: 600, marginRight: 4 }}>Fuentes:</span>
+        {sources.map((s, i) => (
+          <span key={s}>
+            {s}{i < sources.length - 1 && <span style={{ margin: '0 4px', color: 'var(--text-muted)', opacity: 0.6 }}>&middot;</span>}
+          </span>
+        ))}
       </div>
       <div>
-        Observatorio Laboral de Uraba &copy; 2026 &middot; Datos actualizados diariamente
+        Observatorio Laboral de Uraba &copy; 2026 <span style={{ margin: '0 4px', opacity: 0.5 }}>&middot;</span> Datos actualizados diariamente
       </div>
     </footer>
   )

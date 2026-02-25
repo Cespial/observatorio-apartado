@@ -62,7 +62,14 @@ export default function KPICards({ summary }) {
           <div
             key={card.key}
             className="card"
-            style={{ padding: '10px 14px', minWidth: 130, flexShrink: 0 }}
+            style={{
+              padding: '10px 14px', minWidth: 130, flexShrink: 0,
+              borderLeft: `3px solid ${card.negative ? 'var(--semantic-negative)' : card.accent ? 'var(--accent-primary)' : 'var(--border)'}`,
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              cursor: 'default',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)' }}
           >
             <div
               style={{
@@ -70,6 +77,7 @@ export default function KPICards({ summary }) {
                 fontWeight: 700,
                 color: card.negative ? 'var(--semantic-negative)' : card.accent ? 'var(--accent-primary)' : 'var(--text-primary)',
                 lineHeight: 1.2,
+                fontVariantNumeric: 'tabular-nums',
                 fontFeatureSettings: '"tnum"',
               }}
             >

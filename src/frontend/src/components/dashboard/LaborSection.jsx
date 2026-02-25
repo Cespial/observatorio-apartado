@@ -44,11 +44,23 @@ function MiniSparkline({ data, dataKey, color = '#0050B3' }) {
   const range = max - min || 1
   const w = 60
   const h = 20
+  const gradientId = `spark-${dataKey}-${color.replace('#', '')}`
   const points = vals.map((v, i) =>
     `${(i / (vals.length - 1)) * w},${h - ((v - min) / range) * h}`
   ).join(' ')
+  const fillPoints = `0,${h} ${points} ${w},${h}`
   return (
     <svg width={w} height={h} style={{ display: 'block', marginTop: 4 }}>
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={fillPoints}
+        fill={`url(#${gradientId})`}
+      />
       <polyline
         points={points}
         fill="none"
@@ -69,9 +81,14 @@ function TrendBadge({ data, dataKey }) {
   if (prev === 0) return null
   const pct = Math.round(((curr - prev) / prev) * 100)
   const isUp = pct >= 0
-  const color = isUp ? 'var(--semantic-positive)' : 'var(--semantic-negative)'
   return (
-    <span style={{ fontSize: 10, fontWeight: 600, color, marginLeft: 6 }}>
+    <span style={{
+      fontSize: 10, fontWeight: 600, marginLeft: 6,
+      padding: '2px 8px', borderRadius: 10,
+      color: isUp ? 'var(--semantic-positive)' : 'var(--semantic-negative)',
+      background: isUp ? 'rgba(82, 196, 26, 0.1)' : 'rgba(245, 34, 45, 0.1)',
+      display: 'inline-flex', alignItems: 'center', gap: 2,
+    }}>
       {isUp ? '\u2191' : '\u2193'} {Math.abs(pct)}%
     </span>
   )
@@ -96,19 +113,23 @@ export default function LaborSection({ empleoData, empleoKpis, empleoAnalytics, 
       {/* KPI Row */}
       <DashboardCard span={2} title="Mercado Laboral">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-          <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(0, 80, 179, 0.06) 0%, rgba(24, 144, 255, 0.03) 100%)',
+            borderRadius: 8, padding: '12px 14px',
+            border: '1px solid rgba(0, 80, 179, 0.15)',
+          }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent-primary)' }}>
+              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--accent-primary)', fontVariantNumeric: 'tabular-nums' }}>
                 {fmt(kpis?.total_ofertas ?? stats?.total_ofertas)}
               </div>
               <TrendBadge data={serie} dataKey="ofertas" />
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Ofertas totales</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>Ofertas totales</div>
             <MiniSparkline data={serie} dataKey="ofertas" color="#0050B3" />
           </div>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                 {fmt(kpis?.total_empresas)}
               </div>
               <TrendBadge data={serie} dataKey="empresas" />
@@ -117,7 +138,7 @@ export default function LaborSection({ empleoData, empleoKpis, empleoAnalytics, 
             <MiniSparkline data={serie} dataKey="empresas" color="#52C41A" />
           </div>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
               {kpis?.salario_promedio ? fmtSalary(kpis.salario_promedio) : '---'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Salario promedio</div>
@@ -135,7 +156,8 @@ export default function LaborSection({ empleoData, empleoKpis, empleoAnalytics, 
             )}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 10 }}>
+        <div style={{ height: 1, background: 'linear-gradient(90deg, transparent 0%, var(--border-light) 20%, var(--border-light) 80%, transparent 100%)', margin: '6px 0' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 4 }}>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {kpis?.sector_top || '---'}

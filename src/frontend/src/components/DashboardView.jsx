@@ -13,6 +13,15 @@ import CadenasProductivasSection from './dashboard/CadenasProductivasSection'
 import EstacionalidadSection from './dashboard/EstacionalidadSection'
 import InformalidadSection from './dashboard/InformalidadSection'
 
+function SectionDivider({ label }) {
+  return (
+    <div className="section-divider">
+      <span className="section-divider-text">{label}</span>
+      <div className="section-divider-line" />
+    </div>
+  )
+}
+
 function DashboardSkeleton() {
   return (
     <div className="dashboard-view">
@@ -70,9 +79,14 @@ export default function DashboardView() {
   return (
     <div className="dashboard-view">
       <div style={{
-        fontSize: 11, color: 'var(--text-muted)',
-        marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em',
+        fontSize: 14, color: 'var(--text-primary)', fontWeight: 700,
+        marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em',
+        display: 'flex', alignItems: 'center', gap: 10,
       }}>
+        <div style={{
+          width: 3, height: 18, borderRadius: 2,
+          background: 'linear-gradient(180deg, var(--accent-primary), var(--accent-secondary))',
+        }} />
         Tablero de Control — {selectedMunicipio}
       </div>
 
@@ -86,6 +100,9 @@ export default function DashboardView() {
             empleoData={empleoData}
             enrichmentData={enrichmentData}
           />
+
+          {/* Section: Mercado Laboral */}
+          <SectionDivider label="Mercado Laboral" />
 
           {/* Row 2: Labor KPIs (span 2) + Economy KPIs (span 1) */}
           <div style={{ gridColumn: 'span 2', display: 'contents' }}>
@@ -103,9 +120,15 @@ export default function DashboardView() {
             />
           </div>
 
+          {/* Section: Perfil y Caracterización */}
+          <SectionDivider label="Perfil y Caracterizaci\u00F3n" />
+
           {/* Row 3: Enrichment Charts (span 2) + Oferta-Demanda Gauge (span 1) */}
           <EnrichmentCharts enrichmentData={enrichmentData} />
           <OfertaDemandaGauge data={ofertaDemandaData} />
+
+          {/* Section: Análisis Profundo */}
+          <SectionDivider label="An\u00E1lisis Profundo" />
 
           {/* Row 4: Cadenas Productivas (span 2 + 1) */}
           <CadenasProductivasSection data={cadenasProductivasData} />
@@ -118,6 +141,9 @@ export default function DashboardView() {
 
           {/* Row 7: Sector-Municipio Heatmap (span 2) */}
           <SectorMunicipioHeatmap data={sectorMunicipioMatrix} />
+
+          {/* Section: Explorador de Datos */}
+          <SectionDivider label="Explorador de Datos" />
 
           {/* Row 8: Ofertas Explorer (span 3) */}
           <OfertasExplorer />

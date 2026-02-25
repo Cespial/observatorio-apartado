@@ -15,7 +15,7 @@ export default function Header() {
     <header
       style={{
         height: 56,
-        background: 'var(--bg-primary)',
+        background: 'linear-gradient(135deg, var(--bg-primary) 0%, color-mix(in srgb, var(--accent-primary) 4%, var(--bg-primary)) 100%)',
         borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
@@ -26,14 +26,14 @@ export default function Header() {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
             Observatorio Laboral
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
             Uraba, Antioquia
           </div>
         </div>
-        <div style={{ width: 1, height: 32, background: 'var(--border)', margin: '0 8px' }} />
+        <div style={{ width: 1, height: 32, background: 'linear-gradient(180deg, transparent 0%, var(--border) 30%, var(--border) 70%, transparent 100%)', margin: '0 8px' }} />
         
         {/* Territorial Context Selector */}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -79,7 +79,7 @@ export default function Header() {
         <div style={{
           display: 'flex', background: 'var(--bg-tertiary)',
           borderRadius: 8, border: '1px solid var(--border)',
-          overflow: 'hidden',
+          overflow: 'hidden', position: 'relative',
         }}>
           {['mapa', 'tablero'].map((v) => (
             <button
@@ -94,8 +94,10 @@ export default function Header() {
                 background: activeView === v ? 'var(--accent-primary)' : 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 textTransform: 'capitalize',
+                position: 'relative',
+                zIndex: 1,
               }}
             >
               {v === 'mapa' ? 'Mapa' : 'Tablero'}
